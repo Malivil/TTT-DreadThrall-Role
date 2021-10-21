@@ -1,0 +1,6 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models\weapons\bonecharm\bonecharm"
+	"$surfaceprop" "default"
+        "$bumpmap" "models\weapons\bonecharm\bonecharm_normal"
+}
