@@ -2,6 +2,16 @@ AddCSLuaFile()
 
 if SERVER then
     util.AddNetworkString("TTT_DreadThrall_BoneCharmUsed")
+
+    resource.AddSingleFile("vgui/ttt/thr_spiritwalk.png")
+    resource.AddSingleFile("vgui/ttt/thr_spiritwalk_hover.png")
+    resource.AddSingleFile("vgui/ttt/thr_spiritwalk_disabled.png")
+    resource.AddSingleFile("vgui/ttt/thr_blizzard.png")
+    resource.AddSingleFile("vgui/ttt/thr_blizzard_hover.png")
+    resource.AddSingleFile("vgui/ttt/thr_blizzard_disabled.png")
+    resource.AddSingleFile("vgui/ttt/thr_cannibal.png")
+    resource.AddSingleFile("vgui/ttt/thr_cannibal_hover.png")
+    resource.AddSingleFile("vgui/ttt/thr_cannibal_disabled.png")
 end
 
 SWEP.HoldType = "knife"
@@ -60,9 +70,11 @@ SWEP.IsSilent               = true
 SWEP.AllowDelete            = true -- never removed for weapon reduction
 SWEP.AllowDrop              = false
 
-local DREADTHRALL_POWER_SPIRITWALK = 1
-local DREADTHRALL_POWER_BLIZZARD = 2
-local DREADTHRALL_POWER_CANNIBAL = 3
+if SERVER then
+    CreateConVar("ttt_dreadthrall_spiritwalk_cooldown", "30")
+    CreateConVar("ttt_dreadthrall_blizzard_cooldown", "30")
+    CreateConVar("ttt_dreadthrall_cannibal_cooldown", "30")
+end
 
 function SWEP:GoIdle(anim)
     timer.Create("BoneCharmIdle", animationLengths[anim], 1, function()
@@ -141,11 +153,7 @@ function SWEP:OnDrop()
 end
 
 if CLIENT then
-    local buttonToType = {
-        ["spiritwalk"] = DREADTHRALL_POWER_SPIRITWALK,
-        ["blizzard"] = DREADTHRALL_POWER_BLIZZARD,
-        ["cannibal"] = DREADTHRALL_POWER_CANNIBAL
-    }
+    local client
     local panel
     local function AddOnClick(btn)
         btn.DoClick = function()
@@ -153,23 +161,33 @@ if CLIENT then
             panel = nil
 
             net.Start("TTT_DreadThrall_BoneCharmUsed")
-            net.WriteUInt(buttonToType[btn:GetName()], 2)
+            net.WriteString(btn:GetName())
             net.SendToServer()
         end
     end
 
-    local function AddOnHover(btn)
+    local function AddThink(btn)
         btn.Think = function()
-            local image = "vgui/ttt/thr_" .. btn:GetName()
-            if btn:IsHovered() then
+            local name = btn:GetName()
+            local offCooldown = client:GetNWInt("DreadThrallCooldown_" .. name, 0) <= CurTime()
+            local hasCredits = client:GetCredits() > 0
+            local disabled = not hasCredits or not offCooldown
+
+            local image = "vgui/ttt/thr_" .. name
+            if disabled then
+                image = image .. "_disabled"
+            elseif btn:IsHovered() then
                 image = image .. "_hover"
             end
             btn:SetImage(image .. ".png")
+            btn:SetDisabled(disabled)
         end
     end
 
     function SWEP:ShowPowerUI()
         if IsValid(panel) then return end
+
+        client = LocalPlayer()
 
         panel = vgui.Create("DPanel")
         panel:SetSize(500, 500)
@@ -181,7 +199,7 @@ if CLIENT then
         spirit_button:SetPos(0, 0)
         spirit_button:SetName("spiritwalk")
         spirit_button:SetImage("vgui/ttt/thr_spiritwalk.png")
-        AddOnHover(spirit_button)
+        AddThink(spirit_button)
         AddOnClick(spirit_button)
 
         local bliz_button = vgui.Create("DImageButton", panel)
@@ -189,7 +207,7 @@ if CLIENT then
         bliz_button:SetPos(128, 0)
         bliz_button:SetName("blizzard")
         bliz_button:SetImage("vgui/ttt/thr_blizzard.png")
-        AddOnHover(bliz_button)
+        AddThink(bliz_button)
         AddOnClick(bliz_button)
 
         local cannibal_button = vgui.Create("DImageButton", panel)
@@ -197,16 +215,45 @@ if CLIENT then
         cannibal_button:SetPos(256, 0)
         cannibal_button:SetName("cannibal")
         cannibal_button:SetImage("vgui/ttt/thr_cannibal.png")
-        AddOnHover(cannibal_button)
+        AddThink(cannibal_button)
         AddOnClick(cannibal_button)
+
+        -- TODO: Add cooldown (and disable button during)
+        -- TODO: Add cost (and disable buttons when not enough credits)
+        -- TODO: Add close button (or figure out if it can be closed by pressing R again?)
+        -- TODO: Try to prevent "reload" if the window is still open (somehow?)
     end
 else
     net.Receive("TTT_DreadThrall_BoneCharmUsed", function(len, ply)
         if not IsPlayer(ply) or not ply:IsActiveDreadThrall() then return end
 
-        local power = net.ReadUInt(2)
-        if power == 0 then return end
+        local power = net.ReadString()
+        if #power == 0 then return end
 
+        local cooldownId = "DreadThrallCooldown_" .. power
+        local cooldown = ply:GetNWInt(cooldownId)
+        if cooldown > CurTime() then
+            ErrorNoHalt("Player attempted to use DreadThrall power (" .. power .. ") before cooldown: " .. ply:Nick() .. " (" .. ply:SteamID() .. ")\n")
+            return
+        end
+
+        if ply:GetCredits() < 1 then
+            ErrorNoHalt("Player attempted to use DreadThrall power (" .. power .. ") without credits: " .. ply:Nick() .. " (" .. ply:SteamID() .. ")\n")
+            return
+        end
+
+        ply:SetNWInt(cooldownId, CurTime() + GetConVar("ttt_dreadthrall_" .. power .. "_cooldown"):GetInt())
+        ply:SubtractCredits(1)
+
+        -- TODO: Replace this with actually doing something
         print(ply:Nick() .. " used DT power: " .. power)
+    end)
+
+    hook.Add("TTTPrepareRound", "DreadThrall_BoneCharm_TTTPrepareRound", function()
+        for _, v in pairs(player.GetAll()) do
+            v:SetNWInt("DreadThrallCooldown_spiritwalk", 0)
+            v:SetNWInt("DreadThrallCooldown_blizzard", 0)
+            v:SetNWInt("DreadThrallCooldown_cannibal", 0)
+        end
     end)
 end
