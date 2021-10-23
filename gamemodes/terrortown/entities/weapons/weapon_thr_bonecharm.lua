@@ -1,5 +1,9 @@
 AddCSLuaFile()
 
+if SERVER then
+    util.AddNetworkString("TTT_DreadThrall_BoneCharmUsed")
+end
+
 SWEP.HoldType = "knife"
 
 if CLIENT then
@@ -55,6 +59,10 @@ SWEP.IsSilent               = true
 
 SWEP.AllowDelete            = true -- never removed for weapon reduction
 SWEP.AllowDrop              = false
+
+local DREADTHRALL_POWER_SPIRITWALK = 1
+local DREADTHRALL_POWER_BLIZZARD = 2
+local DREADTHRALL_POWER_CANNIBAL = 3
 
 function SWEP:GoIdle(anim)
     timer.Create("BoneCharmIdle", animationLengths[anim], 1, function()
@@ -133,42 +141,72 @@ function SWEP:OnDrop()
 end
 
 if CLIENT then
+    local buttonToType = {
+        ["spiritwalk"] = DREADTHRALL_POWER_SPIRITWALK,
+        ["blizzard"] = DREADTHRALL_POWER_BLIZZARD,
+        ["cannibal"] = DREADTHRALL_POWER_CANNIBAL
+    }
+    local panel
+    local function AddOnClick(btn)
+        btn.DoClick = function()
+            panel:Remove()
+            panel = nil
+
+            net.Start("TTT_DreadThrall_BoneCharmUsed")
+            net.WriteUInt(buttonToType[btn:GetName()], 2)
+            net.SendToServer()
+        end
+    end
+
+    local function AddOnHover(btn)
+        btn.Think = function()
+            local image = "vgui/ttt/thr_" .. btn:GetName()
+            if btn:IsHovered() then
+                image = image .. "_hover"
+            end
+            btn:SetImage(image .. ".png")
+        end
+    end
+
     function SWEP:ShowPowerUI()
-        local panel = vgui.Create("DPanel")
+        if IsValid(panel) then return end
+
+        panel = vgui.Create("DPanel")
         panel:SetSize(500, 500)
         panel:SetPos(ScrW()/2, ScrH()/2)
-        panel:SetBackgroundColor(COLOR_BLACK)
-        panel.Think = function()
-            if panel:IsHovered() then
-                panel:SetBackgroundColor(COLOR_WHITE)
-            else
-                panel:SetBackgroundColor(COLOR_BLACK)
-            end
-        end
+        panel:SetBackgroundColor(COLOR_GREY)
 
         local spirit_button = vgui.Create("DImageButton", panel)
         spirit_button:SetSize(128, 128)
         spirit_button:SetPos(0, 0)
+        spirit_button:SetName("spiritwalk")
         spirit_button:SetImage("vgui/ttt/thr_spiritwalk.png")
-        spirit_button.DoClick = function()
-            panel:Remove()
-            panel = nil
-        end
+        AddOnHover(spirit_button)
+        AddOnClick(spirit_button)
+
         local bliz_button = vgui.Create("DImageButton", panel)
         bliz_button:SetSize(128, 128)
         bliz_button:SetPos(128, 0)
+        bliz_button:SetName("blizzard")
         bliz_button:SetImage("vgui/ttt/thr_blizzard.png")
-        bliz_button.DoClick = function()
-            panel:Remove()
-            panel = nil
-        end
+        AddOnHover(bliz_button)
+        AddOnClick(bliz_button)
+
         local cannibal_button = vgui.Create("DImageButton", panel)
         cannibal_button:SetSize(128, 128)
         cannibal_button:SetPos(256, 0)
+        cannibal_button:SetName("cannibal")
         cannibal_button:SetImage("vgui/ttt/thr_cannibal.png")
-        cannibal_button.DoClick = function()
-            panel:Remove()
-            panel = nil
-        end
+        AddOnHover(cannibal_button)
+        AddOnClick(cannibal_button)
     end
+else
+    net.Receive("TTT_DreadThrall_BoneCharmUsed", function(len, ply)
+        if not IsPlayer(ply) or not ply:IsActiveDreadThrall() then return end
+
+        local power = net.ReadUInt(2)
+        if power == 0 then return end
+
+        print(ply:Nick() .. " used DT power: " .. power)
+    end)
 end
