@@ -122,8 +122,53 @@ function SWEP:Reload()
     self:GoIdle(ACT_VM_THROW)
 
     owner:LagCompensation(false)
+
+    if CLIENT then
+        self:ShowPowerUI()
+    end
 end
 
 function SWEP:OnDrop()
     self:Remove()
+end
+
+if CLIENT then
+    function SWEP:ShowPowerUI()
+        local panel = vgui.Create("DPanel")
+        panel:SetSize(500, 500)
+        panel:SetPos(ScrW()/2, ScrH()/2)
+        panel:SetBackgroundColor(COLOR_BLACK)
+        panel.Think = function()
+            if panel:IsHovered() then
+                panel:SetBackgroundColor(COLOR_WHITE)
+            else
+                panel:SetBackgroundColor(COLOR_BLACK)
+            end
+        end
+
+        local spirit_button = vgui.Create("DImageButton", panel)
+        spirit_button:SetSize(128, 128)
+        spirit_button:SetPos(0, 0)
+        spirit_button:SetImage("vgui/ttt/thr_spiritwalk.png")
+        spirit_button.DoClick = function()
+            panel:Remove()
+            panel = nil
+        end
+        local bliz_button = vgui.Create("DImageButton", panel)
+        bliz_button:SetSize(128, 128)
+        bliz_button:SetPos(128, 0)
+        bliz_button:SetImage("vgui/ttt/thr_blizzard.png")
+        bliz_button.DoClick = function()
+            panel:Remove()
+            panel = nil
+        end
+        local cannibal_button = vgui.Create("DImageButton", panel)
+        cannibal_button:SetSize(128, 128)
+        cannibal_button:SetPos(256, 0)
+        cannibal_button:SetImage("vgui/ttt/thr_cannibal.png")
+        cannibal_button.DoClick = function()
+            panel:Remove()
+            panel = nil
+        end
+    end
 end
