@@ -218,6 +218,7 @@ if CLIENT then
         AddThink(cannibal_button)
         AddOnClick(cannibal_button)
 
+        -- TODO: Add label (show on hover?)
         -- TODO: Add cooldown (and disable button during)
         -- TODO: Add cost (and disable buttons when not enough credits)
         -- TODO: Add close button (or figure out if it can be closed by pressing R again?)
