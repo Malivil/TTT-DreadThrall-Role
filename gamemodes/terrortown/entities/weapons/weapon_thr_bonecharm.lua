@@ -76,6 +76,13 @@ if SERVER then
     CreateConVar("ttt_dreadthrall_cannibal_cooldown", "30")
 end
 
+if CLIENT then
+    function SWEP:Initialize()
+        self:AddHUDHelp("bonecharm_help_pri", "bonecharm_help_sec", true)
+        return self.BaseClass.Initialize(self)
+    end
+end
+
 function SWEP:GoIdle(anim)
     timer.Create("BoneCharmIdle", animationLengths[anim], 1, function()
         self:SendWeaponAnim(ACT_VM_IDLE)
@@ -153,6 +160,15 @@ function SWEP:OnDrop()
 end
 
 if CLIENT then
+    surface.CreateFont("DreadThrallTitle", {
+        font = "Trebuchet MS",
+        size = 22,
+        weight = 900 })
+    surface.CreateFont("DreadThrallSubTitle", {
+        font = "Trebuchet MS",
+        size = 16,
+        weight = 900 })
+
     local client
     local panel
     local function AddOnClick(btn)
@@ -189,16 +205,31 @@ if CLIENT then
 
         client = LocalPlayer()
 
+        local width, height = 500, 500
+
         panel = vgui.Create("DPanel")
-        panel:SetSize(500, 500)
+        panel:SetSize(width, height)
         panel:SetPos(ScrW()/2, ScrH()/2)
         panel.Paint = function(pnl, w, h)
             draw.RoundedBox(8, 0, 0, w, h, Color(0, 0, 10, 200))
         end
 
+        local title = vgui.Create("DLabel", panel)
+        title:SetText(LANG.GetTranslation("dreadthrall_powers_title"))
+        title:SetFont("DreadThrallTitle")
+        title:SizeToContents()
+        title:CenterHorizontal()
+
+        local subtitle = vgui.Create("DLabel", panel)
+        subtitle:SetText(LANG.GetTranslation("dreadthrall_powers_subtitle"))
+        subtitle:SetFont("DreadThrallSubTitle")
+        subtitle:SizeToContents()
+        subtitle:MoveBelow(title)
+        subtitle:CenterHorizontal()
+
         local spirit_button = vgui.Create("DImageButton", panel)
         spirit_button:SetSize(128, 128)
-        spirit_button:SetPos(0, 0)
+        spirit_button:MoveBelow(subtitle)
         spirit_button:SetName("spiritwalk")
         spirit_button:SetImage("vgui/ttt/thr_spiritwalk.png")
         AddThink(spirit_button)
@@ -206,7 +237,7 @@ if CLIENT then
 
         local bliz_button = vgui.Create("DImageButton", panel)
         bliz_button:SetSize(128, 128)
-        bliz_button:SetPos(128, 0)
+        bliz_button:MoveBelow(spirit_button)
         bliz_button:SetName("blizzard")
         bliz_button:SetImage("vgui/ttt/thr_blizzard.png")
         AddThink(bliz_button)
@@ -214,7 +245,7 @@ if CLIENT then
 
         local cannibal_button = vgui.Create("DImageButton", panel)
         cannibal_button:SetSize(128, 128)
-        cannibal_button:SetPos(256, 0)
+        cannibal_button:MoveBelow(bliz_button)
         cannibal_button:SetName("cannibal")
         cannibal_button:SetImage("vgui/ttt/thr_cannibal.png")
         AddThink(cannibal_button)
