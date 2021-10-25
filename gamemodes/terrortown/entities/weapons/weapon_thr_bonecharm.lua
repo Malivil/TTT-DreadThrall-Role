@@ -70,6 +70,10 @@ SWEP.IsSilent               = true
 SWEP.AllowDelete            = true -- never removed for weapon reduction
 SWEP.AllowDrop              = false
 
+if CLIENT then
+    SWEP.PowersPanel = nil
+end
+
 if SERVER then
     CreateConVar("ttt_dreadthrall_spiritwalk_cooldown", "30")
     CreateConVar("ttt_dreadthrall_blizzard_cooldown", "30")
@@ -79,6 +83,10 @@ end
 if CLIENT then
     function SWEP:Initialize()
         self:AddHUDHelp("bonecharm_help_pri", "bonecharm_help_sec", true)
+
+        hook.Add("TTTEndRound", "DreadThrall_BoneCharm_TTTEndRound", self.ClosePowersPanel)
+        hook.Add("TTTPrepareRound", "DreadThrall_BoneCharm_TTTPrepareRound", self.ClosePowersPanel)
+
         return self.BaseClass.Initialize(self)
     end
 end
@@ -161,6 +169,9 @@ end
 
 function SWEP:OnRemove()
     timer.Remove("BoneCharmIdle")
+    if CLIENT then
+        self:ClosePowersPanel()
+    end
 end
 
 if CLIENT then
@@ -173,19 +184,16 @@ if CLIENT then
         size = 16,
         weight = 900 })
 
-    local client
-    local panel
-
-    local function ClosePanel()
-        if IsValid(panel) then
-            panel:Remove()
-            panel = nil
+    function SWEP:ClosePowersPanel()
+        if IsValid(self.PowersPanel) then
+            self.PowersPanel:Remove()
+            self.PowersPanel = nil
         end
     end
 
-    local function AddOnClick(btn)
+    function SWEP:AddOnClick(btn)
         btn.DoClick = function()
-            ClosePanel()
+            self:ClosePowersPanel()
 
             net.Start("TTT_DreadThrall_BoneCharmUsed")
             net.WriteString(btn:GetName())
@@ -193,7 +201,8 @@ if CLIENT then
         end
     end
 
-    local function AddThink(btn)
+    local client
+    function SWEP:AddThink(btn)
         btn.Think = function()
             local name = btn:GetName()
             local offCooldown = client:GetNWInt("DreadThrallCooldown_" .. name, 0) <= CurTime()
@@ -218,49 +227,49 @@ if CLIENT then
 
         local width, height = 500, 500
 
-        panel = vgui.Create("DPanel")
-        panel:SetSize(width, height)
-        panel:Center()
-        panel.Paint = function(pnl, w, h)
+        self.PowersPanel = vgui.Create("DPanel")
+        self.PowersPanel:SetSize(width, height)
+        self.PowersPanel:Center()
+        self.PowersPanel.Paint = function(pnl, w, h)
             draw.RoundedBox(8, 0, 0, w, h, Color(0, 0, 10, 200))
         end
 
-        local title = vgui.Create("DLabel", panel)
+        local title = vgui.Create("DLabel", self.PowersPanel)
         title:SetText(LANG.GetTranslation("dreadthrall_powers_title"))
         title:SetFont("DreadThrallTitle")
         title:SizeToContents()
         title:CenterHorizontal()
 
-        local subtitle = vgui.Create("DLabel", panel)
+        local subtitle = vgui.Create("DLabel", self.PowersPanel)
         subtitle:SetText(LANG.GetTranslation("dreadthrall_powers_subtitle"))
         subtitle:SetFont("DreadThrallSubTitle")
         subtitle:SizeToContents()
         subtitle:MoveBelow(title)
         subtitle:CenterHorizontal()
 
-        local spirit_button = vgui.Create("DImageButton", panel)
+        local spirit_button = vgui.Create("DImageButton", self.PowersPanel)
         spirit_button:SetSize(128, 128)
         spirit_button:MoveBelow(subtitle)
         spirit_button:SetName("spiritwalk")
         spirit_button:SetImage("vgui/ttt/roles/thr/thr_spiritwalk.png")
-        AddThink(spirit_button)
-        AddOnClick(spirit_button)
+        self:AddThink(spirit_button)
+        self:AddOnClick(spirit_button)
 
-        local bliz_button = vgui.Create("DImageButton", panel)
+        local bliz_button = vgui.Create("DImageButton", self.PowersPanel)
         bliz_button:SetSize(128, 128)
         bliz_button:MoveBelow(spirit_button)
         bliz_button:SetName("blizzard")
         bliz_button:SetImage("vgui/ttt/roles/thr/thr_blizzard.png")
-        AddThink(bliz_button)
-        AddOnClick(bliz_button)
+        self:AddThink(bliz_button)
+        self:AddOnClick(bliz_button)
 
-        local cannibal_button = vgui.Create("DImageButton", panel)
+        local cannibal_button = vgui.Create("DImageButton", self.PowersPanel)
         cannibal_button:SetSize(128, 128)
         cannibal_button:MoveBelow(bliz_button)
         cannibal_button:SetName("cannibal")
         cannibal_button:SetImage("vgui/ttt/roles/thr/thr_cannibal.png")
-        AddThink(cannibal_button)
-        AddOnClick(cannibal_button)
+        self:AddThink(cannibal_button)
+        self:AddOnClick(cannibal_button)
 
         -- TODO: Add label (show on hover?)
         -- TODO: Add cooldown (and disable button during)
@@ -268,9 +277,6 @@ if CLIENT then
         -- TODO: Add close button (or figure out if it can be closed by pressing R again?)
         -- TODO: Try to prevent "reload" if the window is still open (somehow?)
     end
-
-    hook.Add("TTTEndRound", "DreadThrall_BoneCharm_TTTEndRound", ClosePanel)
-    hook.Add("TTTPrepareRound", "DreadThrall_BoneCharm_TTTPrepareRound", ClosePanel)
 else
     net.Receive("TTT_DreadThrall_BoneCharmUsed", function(len, ply)
         if not IsPlayer(ply) or not ply:IsActiveDreadThrall() then return end
