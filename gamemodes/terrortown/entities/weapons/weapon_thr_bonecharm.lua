@@ -3,15 +3,15 @@ AddCSLuaFile()
 if SERVER then
     util.AddNetworkString("TTT_DreadThrall_BoneCharmUsed")
 
-    resource.AddSingleFile("vgui/ttt/thr_spiritwalk.png")
-    resource.AddSingleFile("vgui/ttt/thr_spiritwalk_hover.png")
-    resource.AddSingleFile("vgui/ttt/thr_spiritwalk_disabled.png")
-    resource.AddSingleFile("vgui/ttt/thr_blizzard.png")
-    resource.AddSingleFile("vgui/ttt/thr_blizzard_hover.png")
-    resource.AddSingleFile("vgui/ttt/thr_blizzard_disabled.png")
-    resource.AddSingleFile("vgui/ttt/thr_cannibal.png")
-    resource.AddSingleFile("vgui/ttt/thr_cannibal_hover.png")
-    resource.AddSingleFile("vgui/ttt/thr_cannibal_disabled.png")
+    resource.AddSingleFile("vgui/ttt/roles/thr/thr_spiritwalk.png")
+    resource.AddSingleFile("vgui/ttt/roles/thr/thr_spiritwalk_hover.png")
+    resource.AddSingleFile("vgui/ttt/roles/thr/thr_spiritwalk_disabled.png")
+    resource.AddSingleFile("vgui/ttt/roles/thr/thr_blizzard.png")
+    resource.AddSingleFile("vgui/ttt/roles/thr/thr_blizzard_hover.png")
+    resource.AddSingleFile("vgui/ttt/roles/thr/thr_blizzard_disabled.png")
+    resource.AddSingleFile("vgui/ttt/roles/thr/thr_cannibal.png")
+    resource.AddSingleFile("vgui/ttt/roles/thr/thr_cannibal_hover.png")
+    resource.AddSingleFile("vgui/ttt/roles/thr/thr_cannibal_disabled.png")
 end
 
 SWEP.HoldType = "knife"
@@ -159,6 +159,10 @@ function SWEP:OnDrop()
     self:Remove()
 end
 
+function SWEP:OnRemove()
+    timer.Remove("BoneCharmIdle")
+end
+
 if CLIENT then
     surface.CreateFont("DreadThrallTitle", {
         font = "Trebuchet MS",
@@ -171,10 +175,17 @@ if CLIENT then
 
     local client
     local panel
-    local function AddOnClick(btn)
-        btn.DoClick = function()
+
+    local function ClosePanel()
+        if IsValid(panel) then
             panel:Remove()
             panel = nil
+        end
+    end
+
+    local function AddOnClick(btn)
+        btn.DoClick = function()
+            ClosePanel()
 
             net.Start("TTT_DreadThrall_BoneCharmUsed")
             net.WriteString(btn:GetName())
@@ -187,9 +198,9 @@ if CLIENT then
             local name = btn:GetName()
             local offCooldown = client:GetNWInt("DreadThrallCooldown_" .. name, 0) <= CurTime()
             local hasCredits = client:GetCredits() > 0
-            local disabled = not hasCredits or not offCooldown
+            local disabled = not hasCredits or not offCooldown or not client:IsActiveDreadThrall()
 
-            local image = "vgui/ttt/thr_" .. name
+            local image = "vgui/ttt/roles/thr/thr_" .. name
             if disabled then
                 image = image .. "_disabled"
             elseif btn:IsHovered() then
@@ -209,7 +220,7 @@ if CLIENT then
 
         panel = vgui.Create("DPanel")
         panel:SetSize(width, height)
-        panel:SetPos(ScrW()/2, ScrH()/2)
+        panel:Center()
         panel.Paint = function(pnl, w, h)
             draw.RoundedBox(8, 0, 0, w, h, Color(0, 0, 10, 200))
         end
@@ -231,7 +242,7 @@ if CLIENT then
         spirit_button:SetSize(128, 128)
         spirit_button:MoveBelow(subtitle)
         spirit_button:SetName("spiritwalk")
-        spirit_button:SetImage("vgui/ttt/thr_spiritwalk.png")
+        spirit_button:SetImage("vgui/ttt/roles/thr/thr_spiritwalk.png")
         AddThink(spirit_button)
         AddOnClick(spirit_button)
 
@@ -239,7 +250,7 @@ if CLIENT then
         bliz_button:SetSize(128, 128)
         bliz_button:MoveBelow(spirit_button)
         bliz_button:SetName("blizzard")
-        bliz_button:SetImage("vgui/ttt/thr_blizzard.png")
+        bliz_button:SetImage("vgui/ttt/roles/thr/thr_blizzard.png")
         AddThink(bliz_button)
         AddOnClick(bliz_button)
 
@@ -247,7 +258,7 @@ if CLIENT then
         cannibal_button:SetSize(128, 128)
         cannibal_button:MoveBelow(bliz_button)
         cannibal_button:SetName("cannibal")
-        cannibal_button:SetImage("vgui/ttt/thr_cannibal.png")
+        cannibal_button:SetImage("vgui/ttt/roles/thr/thr_cannibal.png")
         AddThink(cannibal_button)
         AddOnClick(cannibal_button)
 
@@ -257,6 +268,9 @@ if CLIENT then
         -- TODO: Add close button (or figure out if it can be closed by pressing R again?)
         -- TODO: Try to prevent "reload" if the window is still open (somehow?)
     end
+
+    hook.Add("TTTEndRound", "DreadThrall_BoneCharm_TTTEndRound", ClosePanel)
+    hook.Add("TTTPrepareRound", "DreadThrall_BoneCharm_TTTPrepareRound", ClosePanel)
 else
     net.Receive("TTT_DreadThrall_BoneCharmUsed", function(len, ply)
         if not IsPlayer(ply) or not ply:IsActiveDreadThrall() then return end

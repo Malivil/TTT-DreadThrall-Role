@@ -1,8 +1,7 @@
 "UnlitGeneric"
 {
-	"$basetexture" "vgui/ttt/sprite_thr"
+	"$basetexture" "vgui/ttt/roles/thr/sprite_thr"
 	"$nocull" 1
-	"$ignorez" 1
 	"$nodecal" 1
 	"$nolod" 1
 	"$vertexcolor" 	1
