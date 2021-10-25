@@ -192,7 +192,9 @@ if CLIENT then
         panel = vgui.Create("DPanel")
         panel:SetSize(500, 500)
         panel:SetPos(ScrW()/2, ScrH()/2)
-        panel:SetBackgroundColor(COLOR_GREY)
+        panel.Paint = function(pnl, w, h)
+            draw.RoundedBox(8, 0, 0, w, h, Color(0, 0, 10, 200))
+        end
 
         local spirit_button = vgui.Create("DImageButton", panel)
         spirit_button:SetSize(128, 128)
