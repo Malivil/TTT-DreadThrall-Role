@@ -21,12 +21,15 @@ ROLE.startingcredits = 2
 ROLE.translations = {
     ["english"] = {
         ["dreadthrall_powers_title"] = "Choose An Ability",
-        ["dreadthrall_powers_subtitle"] = "All abilities cost 1 credit per use",
+        ["dreadthrall_powers_subtitle"] = "All abilities cost\n1 credit per use",
         ["dreadthrall_powers_credits"] = "{credits} credits available",
         ["dreadthrall_powers_close"] = "Close",
         ["dreadthrall_powers_spiritwalk"] = "Spirit Walk",
+        ["dreadthrall_powers_spiritwalk_tooltip"] = "Become invisible and move quickly to escape",
         ["dreadthrall_powers_blizzard"] = "Summon Blizzard",
+        ["dreadthrall_powers_blizzard_tooltip"] = "Summon a blizzard-like fog to reduce visibility",
         ["dreadthrall_powers_cannibal"] = "Cannibal Attack",
+        ["dreadthrall_powers_cannibal_tooltip"] = "Summon cannibals to randomly attack one of your living enemies",
         ["bonecharm_help_pri"] = "Use {primaryfire} or {secondaryfire} to damage your enemies",
         ["bonecharm_help_sec"] = "Press {reload} to select and use a special action"
     }

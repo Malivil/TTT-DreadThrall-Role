@@ -12,6 +12,7 @@ if SERVER then
     resource.AddSingleFile("vgui/ttt/roles/thr/thr_cannibal.png")
     resource.AddSingleFile("vgui/ttt/roles/thr/thr_cannibal_hover.png")
     resource.AddSingleFile("vgui/ttt/roles/thr/thr_cannibal_disabled.png")
+    resource.AddSingleFile("vgui/ttt/roles/thr/thr_credits.png")
 end
 
 SWEP.HoldType = "knife"
@@ -184,11 +185,24 @@ if CLIENT then
         size = 16,
         weight = 900 })
 
+    local creditsLabel
+    local creditsIcon
+    local cooldownsPerPower = {}
     function SWEP:ClosePowersPanel()
         if IsValid(self.PowersPanel) then
             self.PowersPanel:Remove()
             self.PowersPanel = nil
         end
+
+        if IsValid(creditsLabel) then
+            creditsLabel = nil
+        end
+
+        if IsValid(creditsIcon) then
+            creditsIcon = nil
+        end
+
+        table.Empty(cooldownsPerPower)
     end
 
     function SWEP:AddOnClick(btn)
@@ -204,8 +218,11 @@ if CLIENT then
     local client
     function SWEP:AddThink(btn)
         btn.Think = function()
+            self.PowersPanel:MoveToFront()
+
             local name = btn:GetName()
-            local offCooldown = client:GetNWInt("DreadThrallCooldown_" .. name, 0) <= CurTime()
+            local cooldownTime = client:GetNWInt("DreadThrallCooldown_" .. name, 0)
+            local offCooldown = cooldownTime <= CurTime()
             local hasCredits = client:GetCredits() > 0
             local disabled = not hasCredits or not offCooldown or not client:IsActiveDreadThrall()
 
@@ -216,16 +233,74 @@ if CLIENT then
                 image = image .. "_hover"
             end
             btn:SetImage(image .. ".png")
-            btn:SetDisabled(disabled)
+            btn:SetEnabled(not disabled)
+
+            -- Update cooldown status
+            local cooldown = cooldownsPerPower[name]
+            if offCooldown then
+                cooldown:SetVisible(false)
+            else
+                local time = util.SimpleTime(math.max(0, cooldownTime - CurTime()), "%02i:%02i")
+                cooldown:SetText(time)
+                cooldown:SizeToContents()
+                cooldown:CenterHorizontal()
+                cooldown:SetVisible(true)
+            end
+
+            creditsLabel:SetText(LANG.GetParamTranslation("dreadthrall_powers_credits", { credits = client:GetCredits() }))
+            creditsLabel:SizeToContents()
+            creditsLabel:CenterHorizontal()
+
+            creditsIcon:MoveLeftOf(creditsLabel)
         end
     end
 
+    function SWEP:AddLabel(pnl, btn)
+        local name = btn:GetName()
+        local label = vgui.Create("DLabel", pnl)
+        label:SetText(LANG.GetTranslation("dreadthrall_powers_" .. name))
+        label:SizeToContents()
+        label:MoveBelow(btn)
+        label:CenterHorizontal()
+
+        return label
+    end
+
+    function SWEP:AddCooldown(pnl, btn, lbl)
+        local name = btn:GetName()
+        local cooldown = vgui.Create("DLabel", pnl)
+        cooldown:SetVisible(false)
+        cooldown:SizeToContents()
+        cooldown:MoveBelow(lbl)
+        cooldown:CenterHorizontal()
+        cooldownsPerPower[name] = cooldown
+    end
+
+    function SWEP:AddPower(name)
+        local panel = vgui.Create("DPanel", self.PowersPanel)
+        panel:SetSize(128, 155)
+        panel:SetPaintBackground(false)
+
+        local button = vgui.Create("DImageButton", panel)
+        button:SetSize(128, 128)
+        button:SetName(name)
+        button:SetImage("vgui/ttt/roles/thr/thr_" .. name .. ".png")
+        button:SetTooltip(LANG.GetTranslation("dreadthrall_powers_" .. name .. "_tooltip"))
+        self:AddThink(button)
+        self:AddOnClick(button)
+
+        local label = self:AddLabel(panel, button)
+        self:AddCooldown(panel, button, label)
+
+        return panel
+    end
+
     function SWEP:ShowPowerUI()
-        if IsValid(panel) then return end
+        if IsValid(self.PowersPanel) then return end
 
         client = LocalPlayer()
 
-        local width, height = 500, 500
+        local width, height, margin = 400, 340, 10
 
         self.PowersPanel = vgui.Create("DPanel")
         self.PowersPanel:SetSize(width, height)
@@ -247,35 +322,40 @@ if CLIENT then
         subtitle:MoveBelow(title)
         subtitle:CenterHorizontal()
 
-        local spirit_button = vgui.Create("DImageButton", self.PowersPanel)
-        spirit_button:SetSize(128, 128)
-        spirit_button:MoveBelow(subtitle)
-        spirit_button:SetName("spiritwalk")
-        spirit_button:SetImage("vgui/ttt/roles/thr/thr_spiritwalk.png")
-        self:AddThink(spirit_button)
-        self:AddOnClick(spirit_button)
+        local spiritPanel = self:AddPower("spiritwalk")
+        spiritPanel:MoveBelow(title)
+        spiritPanel:AlignLeft(margin)
 
-        local bliz_button = vgui.Create("DImageButton", self.PowersPanel)
-        bliz_button:SetSize(128, 128)
-        bliz_button:MoveBelow(spirit_button)
-        bliz_button:SetName("blizzard")
-        bliz_button:SetImage("vgui/ttt/roles/thr/thr_blizzard.png")
-        self:AddThink(bliz_button)
-        self:AddOnClick(bliz_button)
+        local blizPanel = self:AddPower("blizzard")
+        blizPanel:MoveBelow(title)
+        blizPanel:AlignRight(margin)
 
-        local cannibal_button = vgui.Create("DImageButton", self.PowersPanel)
-        cannibal_button:SetSize(128, 128)
-        cannibal_button:MoveBelow(bliz_button)
-        cannibal_button:SetName("cannibal")
-        cannibal_button:SetImage("vgui/ttt/roles/thr/thr_cannibal.png")
-        self:AddThink(cannibal_button)
-        self:AddOnClick(cannibal_button)
+        local cannibalPanel = self:AddPower("cannibal")
+        cannibalPanel:MoveBelow(blizPanel)
+        cannibalPanel:CenterHorizontal()
 
-        -- TODO: Add label (show on hover?)
-        -- TODO: Add cooldown (and disable button during)
-        -- TODO: Add cost (and disable buttons when not enough credits)
-        -- TODO: Add close button (or figure out if it can be closed by pressing R again?)
-        -- TODO: Try to prevent "reload" if the window is still open (somehow?)
+        creditsLabel = vgui.Create("DLabel", self.PowersPanel)
+        creditsLabel:SetText(LANG.GetParamTranslation("dreadthrall_powers_credits", { credits = 0 }))
+        creditsLabel:SetFont("DreadThrallSubTitle")
+        creditsLabel:SizeToContents()
+        creditsLabel:CenterHorizontal()
+        creditsLabel:CenterVertical(0.45)
+
+        creditsIcon = vgui.Create("DImage", self.PowersPanel)
+        creditsIcon:SetSize(24, 24)
+        creditsIcon:MoveLeftOf(creditsLabel)
+        creditsIcon:CenterVertical(0.45)
+        creditsIcon:SetImage("vgui/ttt/roles/thr/thr_credits.png")
+
+        local closeButton = vgui.Create("DButton", self.PowersPanel)
+        closeButton:SetText(LANG.GetTranslation("dreadthrall_powers_close"))
+        closeButton:SizeToContentsX(margin)
+        closeButton:SizeToContentsY(margin)
+        local close_w, close_y = closeButton:GetSize()
+        closeButton:SetPos(width - close_w - margin, height - close_y - margin)
+        closeButton.DoClick = function()
+            self:ClosePowersPanel()
+        end
     end
 else
     net.Receive("TTT_DreadThrall_BoneCharmUsed", function(len, ply)
