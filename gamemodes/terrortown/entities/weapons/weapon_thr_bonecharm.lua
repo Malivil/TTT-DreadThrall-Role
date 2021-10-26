@@ -47,13 +47,14 @@ local animationLengths = {
     [ACT_VM_IDLE] = 6
 }
 
-SWEP.Primary.Damage         = 65
+SWEP.Primary.Damage         = 20
 SWEP.Primary.ClipSize       = -1
 SWEP.Primary.DefaultClip    = -1
 SWEP.Primary.Automatic      = true
 SWEP.Primary.Delay          = animationLengths[ACT_VM_PRIMARYATTACK]
 SWEP.Primary.Ammo           = "none"
 
+SWEP.Secondary.Damage       = 15
 SWEP.Secondary.ClipSize     = -1
 SWEP.Secondary.DefaultClip  = -1
 SWEP.Secondary.Automatic    = false
@@ -112,6 +113,48 @@ function SWEP:Deploy()
     self:GoIdle(anim)
 end
 
+function SWEP:DoAttack(owner, damage)
+    local spos = owner:GetShootPos()
+    local sdest = spos + (owner:GetAimVector() * 70)
+
+    local kmins = Vector(1, 1, 1) * -10
+    local kmaxs = Vector(1, 1, 1) * 10
+
+    local tr = util.TraceHull({start=spos, endpos=sdest, filter=owner, mask=MASK_SHOT_HULL, mins=kmins, maxs=kmaxs})
+
+    -- Hull might hit environment stuff that line does not hit
+    if not IsValid(tr.Entity) then
+        tr = util.TraceLine({start=spos, endpos=sdest, filter=owner, mask=MASK_SHOT_HULL})
+    end
+
+    local hitEnt = tr.Entity
+
+    -- effects
+    if IsValid(hitEnt) then
+        local edata = EffectData()
+        edata:SetStart(spos)
+        edata:SetOrigin(tr.HitPos)
+        edata:SetNormal(tr.Normal)
+        edata:SetEntity(hitEnt)
+
+        if hitEnt:IsPlayer() or hitEnt:GetClass() == "prop_ragdoll" then
+            util.Effect("BloodImpact", edata)
+        end
+    end
+
+    if SERVER and tr.Hit and tr.HitNonWorld and IsPlayer(hitEnt) then
+        local dmg = DamageInfo()
+        dmg:SetDamage(damage)
+        dmg:SetAttacker(owner)
+        dmg:SetInflictor(self)
+        dmg:SetDamageForce(owner:GetAimVector() * 5)
+        dmg:SetDamagePosition(owner:GetPos())
+        dmg:SetDamageType(DMG_SLASH)
+
+        hitEnt:DispatchTraceAttack(dmg, spos + (owner:GetAimVector() * 3), sdest)
+    end
+end
+
 function SWEP:PrimaryAttack()
     if self:GetNextPrimaryFire() > CurTime() then return end
     self:SetNextPrimaryFire(CurTime() + self.Primary.Delay)
@@ -121,6 +164,7 @@ function SWEP:PrimaryAttack()
 
     owner:LagCompensation(true)
 
+    self:DoAttack(owner, self.Primary.Damage)
     owner:SetAnimation(PLAYER_ATTACK1)
     self:SendWeaponAnim(ACT_VM_PRIMARYATTACK)
     self:GoIdle(ACT_VM_PRIMARYATTACK)
@@ -137,6 +181,7 @@ function SWEP:SecondaryAttack()
 
     owner:LagCompensation(true)
 
+    self:DoAttack(owner, self.Secondary.Damage)
     owner:SetAnimation(PLAYER_ATTACK1)
     self:SendWeaponAnim(ACT_VM_SECONDARYATTACK)
     self:GoIdle(ACT_VM_SECONDARYATTACK)
@@ -153,7 +198,7 @@ function SWEP:Reload()
 
     owner:LagCompensation(true)
 
-    owner:SetAnimation(PLAYER_ATTACK1)
+    owner:SetAnimation(PLAYER_IDLE)
     self:SendWeaponAnim(ACT_VM_THROW)
     self:GoIdle(ACT_VM_THROW)
 
