@@ -15,6 +15,9 @@ if SERVER then
     resource.AddSingleFile("vgui/ttt/thr_cannibal_hover.png")
     resource.AddSingleFile("vgui/ttt/thr_cannibal_disabled.png")
     resource.AddSingleFile("vgui/ttt/thr_credits.png")
+
+    resource.AddSingleFile("sound/weapons/ttt/dreadthrall/fade.wav")
+    resource.AddSingleFile("sound/weapons/ttt/dreadthrall/unfade.wav")
 end
 
 SWEP.HoldType = "knife"
@@ -80,9 +83,11 @@ end
 
 if SERVER then
     CreateConVar("ttt_dreadthrall_spiritwalk_cooldown", "30", FCVAR_NONE, "How many seconds between uses", 1, 180)
-    CreateConVar("ttt_dreadthrall_spiritwalk_duration", "30", FCVAR_NONE, "How many seconds the effect lasts", 1, 180)
+    CreateConVar("ttt_dreadthrall_spiritwalk_duration", "10", FCVAR_NONE, "How many seconds the effect lasts", 1, 180)
+    CreateConVar("ttt_dreadthrall_spiritwalk_speedboost", "2", FCVAR_NONE, "How much of a speed boost to give", 1, 5)
     CreateConVar("ttt_dreadthrall_blizzard_cooldown", "30", FCVAR_NONE, "How many seconds between uses", 1, 180)
     CreateConVar("ttt_dreadthrall_blizzard_duration", "30", FCVAR_NONE, "How many seconds the effect lasts", 1, 180)
+    CreateConVar("ttt_dreadthrall_blizzard_start", "50", FCVAR_NONE, "How far away from the player the fog should start", 1, 300)
     CreateConVar("ttt_dreadthrall_cannibal_cooldown", "30", FCVAR_NONE, "How many seconds between uses", 1, 180)
     CreateConVar("ttt_dreadthrall_cannibal_count", "3", FCVAR_NONE, "How many cannibals to summon", 1, 10)
 end
@@ -116,6 +121,14 @@ function SWEP:Deploy()
     self:SetNextPrimaryFire(CurTime() + animationLengths[anim])
     self:SendWeaponAnim(anim)
     self:GoIdle(anim)
+end
+
+function SWEP:Holster()
+    -- Don't let the user holster their weapon while they are spirit walking
+    if IsValid(self) and timer.Exists("BoneCharmSpiritWalk_" .. self:EntIndex()) then
+        return false
+    end
+    return true
 end
 
 function SWEP:DoAttack(owner, damage)
@@ -217,6 +230,16 @@ end
 
 function SWEP:OnRemove()
     timer.Remove("BoneCharmIdle_" .. self:EntIndex())
+    if SERVER then
+        if timer.Exists("BoneCharmSpiritWalk_" .. self:EntIndex()) then
+            timer.Remove("BoneCharmSpiritWalk_" .. self:EntIndex())
+            local owner = self:GetOwner()
+            owner:SetColor(Color(255, 255, 255, 255))
+            owner:SetMaterial("models/glass")
+            owner:EmitSound("weapons/ttt/dreadthrall/unfade.wav")
+            owner:SetNWInt("DreadThrall_SpiritWalking", 0)
+        end
+    end
     if CLIENT then
         self:ClosePowersPanel()
     end
@@ -407,12 +430,14 @@ if CLIENT then
     end
 
     net.Receive("TTT_DreadThrall_Blizzard_Start", function()
+        local start = net.ReadUInt(12)
+
         --Limits the player's view distance like in among us
         hook.Add("SetupWorldFog", "DreadThrall_SetupWorldFog", function()
             render.FogMode(MATERIAL_FOG_LINEAR)
             render.FogColor(255, 255, 255)
             render.FogMaxDensity(1)
-            render.FogStart(200)
+            render.FogStart(start)
             render.FogEnd(600)
 
             return true
@@ -423,7 +448,7 @@ if CLIENT then
             render.FogMode(MATERIAL_FOG_LINEAR)
             render.FogColor(255, 255, 255)
             render.FogMaxDensity(1)
-            render.FogStart(200 * scale)
+            render.FogStart(start * scale)
             render.FogEnd(600 * scale)
 
             return true
@@ -436,10 +461,28 @@ if CLIENT then
     end)
 else
     function DoSpiritWalk(ply, entIndex)
+        ply:SetColor(Color(255, 255, 255, 0))
+        ply:SetMaterial("sprites/heatwave")
+        ply:EmitSound("weapons/ttt/dreadthrall/fade.wav")
+
+        local speed = GetConVar("ttt_dreadthrall_spiritwalk_speedboost"):GetInt()
+        ply:SetNWInt("DreadThrall_SpiritWalking", speed)
+
+        local duration = GetConVar("ttt_dreadthrall_spiritwalk_duration"):GetInt()
+        timer.Create("BoneCharmSpiritWalk_" .. entIndex, duration, 1, function()
+            -- Remove the timer so the player can switch weapons again
+            timer.Remove("BoneCharmSpiritWalk_" .. entIndex)
+            ply:SetColor(Color(255, 255, 255, 255))
+            ply:SetMaterial("models/glass")
+            ply:EmitSound("weapons/ttt/dreadthrall/unfade.wav")
+            ply:SetNWInt("DreadThrall_SpiritWalking", 0)
+        end)
     end
 
     function DoBlizzard(ply, entIndex)
+        local start = GetConVar("ttt_dreadthrall_blizzard_start"):GetInt()
         net.Start("TTT_DreadThrall_Blizzard_Start")
+        net.WriteUInt(start, 12)
         net.Broadcast()
 
         for _, p in ipairs(player.GetAll()) do
@@ -509,6 +552,14 @@ else
             v:SetNWInt("DreadThrallCooldown_spiritwalk", 0)
             v:SetNWInt("DreadThrallCooldown_blizzard", 0)
             v:SetNWInt("DreadThrallCooldown_cannibal", 0)
+            v:SetNWInt("DreadThrall_SpiritWalking", 0)
         end
     end)
 end
+
+hook.Add("TTTSpeedMultiplier", "DreadThrall_BoneCharm_TTTSpeedMultiplier", function(ply, mults)
+    local speed = ply:GetNWInt("DreadThrall_SpiritWalking", 0)
+    if speed > 1 then
+        table.insert(mults, speed)
+    end
+end)

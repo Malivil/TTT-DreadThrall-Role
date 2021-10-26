@@ -47,12 +47,22 @@ table.insert(ROLE.convars, {
     decimal = 0
 })
 table.insert(ROLE.convars, {
+    cvar = "ttt_dreadthrall_spiritwalk_speedboost",
+    type = ROLE_CONVAR_TYPE_NUM,
+    decimal = 2
+})
+table.insert(ROLE.convars, {
     cvar = "ttt_dreadthrall_blizzard_cooldown",
     type = ROLE_CONVAR_TYPE_NUM,
     decimal = 0
 })
 table.insert(ROLE.convars, {
     cvar = "ttt_dreadthrall_blizzard_duration",
+    type = ROLE_CONVAR_TYPE_NUM,
+    decimal = 0
+})
+table.insert(ROLE.convars, {
+    cvar = "ttt_dreadthrall_blizzard_start",
     type = ROLE_CONVAR_TYPE_NUM,
     decimal = 0
 })
