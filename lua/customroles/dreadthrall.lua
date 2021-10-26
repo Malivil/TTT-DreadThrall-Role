@@ -36,6 +36,36 @@ ROLE.translations = {
 }
 
 ROLE.convars = {}
+table.insert(ROLE.convars, {
+    cvar = "ttt_dreadthrall_spiritwalk_cooldown",
+    type = ROLE_CONVAR_TYPE_NUM,
+    decimal = 0
+})
+table.insert(ROLE.convars, {
+    cvar = "ttt_dreadthrall_spiritwalk_duration",
+    type = ROLE_CONVAR_TYPE_NUM,
+    decimal = 0
+})
+table.insert(ROLE.convars, {
+    cvar = "ttt_dreadthrall_blizzard_cooldown",
+    type = ROLE_CONVAR_TYPE_NUM,
+    decimal = 0
+})
+table.insert(ROLE.convars, {
+    cvar = "ttt_dreadthrall_blizzard_duration",
+    type = ROLE_CONVAR_TYPE_NUM,
+    decimal = 0
+})
+table.insert(ROLE.convars, {
+    cvar = "ttt_dreadthrall_cannibal_cooldown",
+    type = ROLE_CONVAR_TYPE_NUM,
+    decimal = 0
+})
+table.insert(ROLE.convars, {
+    cvar = "ttt_dreadthrall_cannibal_count",
+    type = ROLE_CONVAR_TYPE_NUM,
+    decimal = 0
+})
 
 RegisterRole(ROLE)
 

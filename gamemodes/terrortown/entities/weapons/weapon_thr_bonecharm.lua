@@ -2,6 +2,8 @@ AddCSLuaFile()
 
 if SERVER then
     util.AddNetworkString("TTT_DreadThrall_BoneCharmUsed")
+    util.AddNetworkString("TTT_DreadThrall_Blizzard_Start")
+    util.AddNetworkString("TTT_DreadThrall_Blizzard_End")
 
     resource.AddSingleFile("vgui/ttt/thr_spiritwalk.png")
     resource.AddSingleFile("vgui/ttt/thr_spiritwalk_hover.png")
@@ -77,9 +79,12 @@ if CLIENT then
 end
 
 if SERVER then
-    CreateConVar("ttt_dreadthrall_spiritwalk_cooldown", "30")
-    CreateConVar("ttt_dreadthrall_blizzard_cooldown", "30")
-    CreateConVar("ttt_dreadthrall_cannibal_cooldown", "30")
+    CreateConVar("ttt_dreadthrall_spiritwalk_cooldown", "30", FCVAR_NONE, "How many seconds between uses", 1, 180)
+    CreateConVar("ttt_dreadthrall_spiritwalk_duration", "30", FCVAR_NONE, "How many seconds the effect lasts", 1, 180)
+    CreateConVar("ttt_dreadthrall_blizzard_cooldown", "30", FCVAR_NONE, "How many seconds between uses", 1, 180)
+    CreateConVar("ttt_dreadthrall_blizzard_duration", "30", FCVAR_NONE, "How many seconds the effect lasts", 1, 180)
+    CreateConVar("ttt_dreadthrall_cannibal_cooldown", "30", FCVAR_NONE, "How many seconds between uses", 1, 180)
+    CreateConVar("ttt_dreadthrall_cannibal_count", "3", FCVAR_NONE, "How many cannibals to summon", 1, 10)
 end
 
 if CLIENT then
@@ -94,7 +99,7 @@ if CLIENT then
 end
 
 function SWEP:GoIdle(anim)
-    timer.Create("BoneCharmIdle", animationLengths[anim], 1, function()
+    timer.Create("BoneCharmIdle_" .. self:EntIndex(), animationLengths[anim], 1, function()
         self:SendWeaponAnim(ACT_VM_IDLE)
     end)
 end
@@ -211,7 +216,7 @@ function SWEP:OnDrop()
 end
 
 function SWEP:OnRemove()
-    timer.Remove("BoneCharmIdle")
+    timer.Remove("BoneCharmIdle_" .. self:EntIndex())
     if CLIENT then
         self:ClosePowersPanel()
     end
@@ -247,12 +252,13 @@ if CLIENT then
         table.Empty(cooldownsPerPower)
     end
 
-    function SWEP:AddOnClick(btn)
+    function SWEP:AddOnClick(btn, entIndex)
         btn.DoClick = function()
             self:ClosePowersPanel()
 
             net.Start("TTT_DreadThrall_BoneCharmUsed")
             net.WriteString(btn:GetName())
+            net.WriteUInt(entIndex, 16)
             net.SendToServer()
         end
     end
@@ -329,7 +335,7 @@ if CLIENT then
         button:SetImage("vgui/ttt/thr_" .. name .. ".png")
         button:SetTooltip(LANG.GetTranslation("dreadthrall_powers_" .. name .. "_tooltip"))
         self:AddThink(button)
-        self:AddOnClick(button)
+        self:AddOnClick(button, self:EntIndex())
 
         local label = self:AddLabel(panel, button)
         self:AddCooldown(panel, button, label)
@@ -399,15 +405,80 @@ if CLIENT then
             self:ClosePowersPanel()
         end
     end
+
+    net.Receive("TTT_DreadThrall_Blizzard_Start", function()
+        --Limits the player's view distance like in among us
+        hook.Add("SetupWorldFog", "DreadThrall_SetupWorldFog", function()
+            render.FogMode(MATERIAL_FOG_LINEAR)
+            render.FogColor(255, 255, 255)
+            render.FogMaxDensity(1)
+            render.FogStart(200)
+            render.FogEnd(600)
+
+            return true
+        end)
+
+        --If a map has a 3D skybox, apply a fog effect to that too
+        hook.Add("SetupSkyboxFog", "DreadThrall_SetupSkyboxFog", function(scale)
+            render.FogMode(MATERIAL_FOG_LINEAR)
+            render.FogColor(255, 255, 255)
+            render.FogMaxDensity(1)
+            render.FogStart(200 * scale)
+            render.FogEnd(600 * scale)
+
+            return true
+        end)
+    end)
+
+    net.Receive("TTT_DreadThrall_Blizzard_End", function()
+        hook.Remove("SetupWorldFog", "DreadThrall_SetupWorldFog")
+        hook.Remove("SetupSkyboxFog", "DreadThrall_SetupSkyboxFog")
+    end)
 else
+    function DoSpiritWalk(ply, entIndex)
+    end
+
+    function DoBlizzard(ply, entIndex)
+        net.Start("TTT_DreadThrall_Blizzard_Start")
+        net.Broadcast()
+
+        for _, p in ipairs(player.GetAll()) do
+            p:PrintMessage(HUD_PRINTTALK, "A blizzard approaches...")
+            p:PrintMessage(HUD_PRINTCENTER, "A blizzard approaches...")
+        end
+
+        local duration = GetConVar("ttt_dreadthrall_blizzard_duration"):GetInt()
+        timer.Create("BoneCharmBlizzard_" .. entIndex, duration, 1, function()
+            net.Start("TTT_DreadThrall_Blizzard_End")
+            net.Broadcast()
+
+            for _, p in ipairs(player.GetAll()) do
+                p:PrintMessage(HUD_PRINTTALK, "The blizzard has subsided")
+                p:PrintMessage(HUD_PRINTCENTER, "The blizzard has subsided")
+            end
+        end)
+    end
+
+    function DoCannibals(ply, entIndex)
+    end
+
     net.Receive("TTT_DreadThrall_BoneCharmUsed", function(len, ply)
         if not IsPlayer(ply) or not ply:IsActiveDreadThrall() then return end
 
         local power = net.ReadString()
         if #power == 0 then return end
 
+        local entIndex = net.ReadUInt(16)
+        if entIndex < 0 then return end
+
+        local convarId = "ttt_dreadthrall_" .. power .. "_cooldown"
+        if not ConVarExists(convarId) then
+            ErrorNoHalt("Player attempted to use DreadThrall power (" .. power .. ") that doesn't exist: " .. ply:Nick() .. " (" .. ply:SteamID() .. ")\n")
+            return
+        end
+
         local cooldownId = "DreadThrallCooldown_" .. power
-        local cooldown = ply:GetNWInt(cooldownId)
+        local cooldown = ply:GetNWInt(cooldownId, 0)
         if cooldown > CurTime() then
             ErrorNoHalt("Player attempted to use DreadThrall power (" .. power .. ") before cooldown: " .. ply:Nick() .. " (" .. ply:SteamID() .. ")\n")
             return
@@ -418,11 +489,19 @@ else
             return
         end
 
-        ply:SetNWInt(cooldownId, CurTime() + GetConVar("ttt_dreadthrall_" .. power .. "_cooldown"):GetInt())
+        ply:SetNWInt(cooldownId, CurTime() + GetConVar(convarId):GetInt())
         ply:SubtractCredits(1)
 
         -- TODO: Replace this with actually doing something
         print(ply:Nick() .. " used DT power: " .. power)
+
+        if power == "spiritwalk" then
+            DoSpiritWalk(ply, entIndex)
+        elseif power == "blizzard" then
+            DoBlizzard(ply, entIndex)
+        elseif power == "cannibal" then
+            DoCannibals(ply, entIndex)
+        end
     end)
 
     hook.Add("TTTPrepareRound", "DreadThrall_BoneCharm_TTTPrepareRound", function()
