@@ -236,7 +236,7 @@ if CLIENT then
     local creditsIcon
     local cooldownsPerPower = {}
     function SWEP:ClosePowersPanel()
-        if IsValid(self.PowersPanel) then
+        if IsValid(self) and IsValid(self.PowersPanel) then
             self.PowersPanel:Remove()
             self.PowersPanel = nil
         end
