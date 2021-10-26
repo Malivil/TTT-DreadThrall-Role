@@ -131,13 +131,12 @@ function SWEP:DoAttack(owner, damage)
 
     -- effects
     if IsValid(hitEnt) then
-        local edata = EffectData()
-        edata:SetStart(spos)
-        edata:SetOrigin(tr.HitPos)
-        edata:SetNormal(tr.Normal)
-        edata:SetEntity(hitEnt)
-
         if hitEnt:IsPlayer() or hitEnt:GetClass() == "prop_ragdoll" then
+            local edata = EffectData()
+            edata:SetStart(spos)
+            edata:SetOrigin(tr.HitPos)
+            edata:SetNormal(tr.Normal)
+            edata:SetEntity(hitEnt)
             util.Effect("BloodImpact", edata)
         end
     end
