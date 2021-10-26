@@ -3,16 +3,16 @@ AddCSLuaFile()
 if SERVER then
     util.AddNetworkString("TTT_DreadThrall_BoneCharmUsed")
 
-    resource.AddSingleFile("vgui/ttt/roles/thr/thr_spiritwalk.png")
-    resource.AddSingleFile("vgui/ttt/roles/thr/thr_spiritwalk_hover.png")
-    resource.AddSingleFile("vgui/ttt/roles/thr/thr_spiritwalk_disabled.png")
-    resource.AddSingleFile("vgui/ttt/roles/thr/thr_blizzard.png")
-    resource.AddSingleFile("vgui/ttt/roles/thr/thr_blizzard_hover.png")
-    resource.AddSingleFile("vgui/ttt/roles/thr/thr_blizzard_disabled.png")
-    resource.AddSingleFile("vgui/ttt/roles/thr/thr_cannibal.png")
-    resource.AddSingleFile("vgui/ttt/roles/thr/thr_cannibal_hover.png")
-    resource.AddSingleFile("vgui/ttt/roles/thr/thr_cannibal_disabled.png")
-    resource.AddSingleFile("vgui/ttt/roles/thr/thr_credits.png")
+    resource.AddSingleFile("vgui/ttt/thr_spiritwalk.png")
+    resource.AddSingleFile("vgui/ttt/thr_spiritwalk_hover.png")
+    resource.AddSingleFile("vgui/ttt/thr_spiritwalk_disabled.png")
+    resource.AddSingleFile("vgui/ttt/thr_blizzard.png")
+    resource.AddSingleFile("vgui/ttt/thr_blizzard_hover.png")
+    resource.AddSingleFile("vgui/ttt/thr_blizzard_disabled.png")
+    resource.AddSingleFile("vgui/ttt/thr_cannibal.png")
+    resource.AddSingleFile("vgui/ttt/thr_cannibal_hover.png")
+    resource.AddSingleFile("vgui/ttt/thr_cannibal_disabled.png")
+    resource.AddSingleFile("vgui/ttt/thr_credits.png")
 end
 
 SWEP.HoldType = "knife"
@@ -268,7 +268,7 @@ if CLIENT then
             local hasCredits = client:GetCredits() > 0
             local disabled = not hasCredits or not offCooldown or not client:IsActiveDreadThrall()
 
-            local image = "vgui/ttt/roles/thr/thr_" .. name
+            local image = "vgui/ttt/thr_" .. name
             if disabled then
                 image = image .. "_disabled"
             elseif btn:IsHovered() then
@@ -326,7 +326,7 @@ if CLIENT then
         local button = vgui.Create("DImageButton", panel)
         button:SetSize(128, 128)
         button:SetName(name)
-        button:SetImage("vgui/ttt/roles/thr/thr_" .. name .. ".png")
+        button:SetImage("vgui/ttt/thr_" .. name .. ".png")
         button:SetTooltip(LANG.GetTranslation("dreadthrall_powers_" .. name .. "_tooltip"))
         self:AddThink(button)
         self:AddOnClick(button)
@@ -387,7 +387,7 @@ if CLIENT then
         creditsIcon:SetSize(24, 24)
         creditsIcon:MoveLeftOf(creditsLabel)
         creditsIcon:CenterVertical(0.45)
-        creditsIcon:SetImage("vgui/ttt/roles/thr/thr_credits.png")
+        creditsIcon:SetImage("vgui/ttt/thr_credits.png")
 
         local closeButton = vgui.Create("DButton", self.PowersPanel)
         closeButton:SetText(LANG.GetTranslation("dreadthrall_powers_close"))
