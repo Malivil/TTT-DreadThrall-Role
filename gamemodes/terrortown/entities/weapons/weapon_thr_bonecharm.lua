@@ -87,9 +87,11 @@ if SERVER then
     CreateConVar("ttt_dreadthrall_spiritwalk_speedboost", "2", FCVAR_NONE, "How much of a speed boost to give", 1, 5)
     CreateConVar("ttt_dreadthrall_blizzard_cooldown", "30", FCVAR_NONE, "How many seconds between uses", 1, 180)
     CreateConVar("ttt_dreadthrall_blizzard_duration", "30", FCVAR_NONE, "How many seconds the effect lasts", 1, 180)
-    CreateConVar("ttt_dreadthrall_blizzard_start", "50", FCVAR_NONE, "How far away from the player the fog should start", 1, 300)
+    CreateConVar("ttt_dreadthrall_blizzard_start", "50", FCVAR_NONE, "How far away from the player the visual effect should start", 1, 300)
     CreateConVar("ttt_dreadthrall_cannibal_cooldown", "30", FCVAR_NONE, "How many seconds between uses", 1, 180)
     CreateConVar("ttt_dreadthrall_cannibal_count", "3", FCVAR_NONE, "How many cannibals to summon", 1, 10)
+    CreateConVar("ttt_dreadthrall_cannibal_damage", "10", FCVAR_NONE, "How much damage cannibals do", 1, 100)
+    CreateConVar("ttt_dreadthrall_cannibal_toughness", "1", FCVAR_NONE, "Cannibal health multiplier", 0.1, 5)
 end
 
 if CLIENT then
@@ -475,7 +477,7 @@ if CLIENT then
         hook.Remove("SetupSkyboxFog", "DreadThrall_SetupSkyboxFog")
     end)
 else
-    function DoSpiritWalk(ply, entIndex)
+    local function DoSpiritWalk(ply, entIndex)
         ply:SetColor(Color(255, 255, 255, 0))
         ply:SetMaterial("sprites/heatwave")
         ply:EmitSound("weapons/ttt/dreadthrall/fade.wav")
@@ -494,7 +496,7 @@ else
         end)
     end
 
-    function DoBlizzard(ply, entIndex)
+    local function DoBlizzard(ply, entIndex)
         local start = GetConVar("ttt_dreadthrall_blizzard_start"):GetInt()
         net.Start("TTT_DreadThrall_Blizzard_Start")
         net.WriteUInt(start, 12)
@@ -517,8 +519,92 @@ else
         end)
     end
 
-    function DoCannibals(ply, entIndex)
+    local function DoCannibals(ply, entIndex)
+        local target = nil
+        for _, p in RandomPairs(player.GetAll()) do
+            -- Ignore dead people, spectators, traitors, jesters, and people who win passively (like the Old Man)
+            if p:Alive() and not p:IsSpec() and not p:IsTraitorTeam() and not p:ShouldActLikeJester() and not ROLE_HAS_PASSIVE_WIN[p:GetRole()] then
+                target = p
+                break
+            end
+        end
+
+        if not IsPlayer(target) then return end
+
+        local tgt_pos = target:GetPos()
+        local spawns = {}
+        for _, e in ipairs(ents.GetAll()) do
+            local entity_class = e:GetClass()
+            -- Find spawn entities without parents
+            if (string.StartWith(entity_class, "info_") or string.StartWith(entity_class, "weapon_") or string.StartWith(entity_class, "item_")) and not IsValid(e:GetParent()) then
+                table.insert(spawns, {
+                    ent = e,
+                    dist = e:GetPos():Distance(tgt_pos)
+                })
+            end
+        end
+
+        -- Find the N nearest spawns corresponding to the number of cannibals to spawn
+        local count = GetConVar("ttt_dreadthrall_cannibal_count"):GetInt()
+        local nearest_spawns = {}
+        for _, spawn in SortedPairsByMemberValue(spawns, "dist") do
+            if IsValid(spawn.ent) then
+                table.insert(nearest_spawns, spawn.ent)
+                if #nearest_spawns == count then
+                    break
+                end
+            end
+        end
+
+        -- Spawn 1 zombie for each of the chosen spawn locations
+        for _, ent in ipairs(nearest_spawns) do
+            local zombie = ents.Create("npc_fastzombie")
+            zombie:SetPos(Vector(ent:GetPos()[1], ent:GetPos()[2], ent:GetPos()[3] + 10))
+            zombie:Spawn()
+            zombie:PhysWake()
+            zombie:SetSchedule(SCHED_ALERT_WALK)
+            zombie:NavSetWanderGoal(100, 100)
+            zombie:SetNWBool("DreadThrallCannibal", true)
+        end
+
+        ply:PrintMessage(HUD_PRINTTALK, "Summoned " .. count .. " cannibals near " .. target:Nick())
+        ply:PrintMessage(HUD_PRINTCENTER, "Summoned " .. count .. " cannibals near " .. target:Nick())
     end
+
+    local function IsCannibal(ent)
+        return IsValid(ent) and ent:IsNPC() and ent:GetNWBool("DreadThrallCannibal", false)
+    end
+
+    local nextRelationshipUpdate = CurTime()
+    hook.Add("Think", "DreadThrall_Cannibal_Think", function()
+        if CurTime() < nextRelationshipUpdate then return end
+        nextRelationshipUpdate = CurTime() + 0.08
+
+        -- Update the zombie relationship so they don't attack traitors
+        for _, ent in ipairs(ents.FindByClass("npc_fastzombie")) do
+            if IsCannibal(ent) then
+                for _, ply in ipairs(player.GetAll()) do
+                    if ply:Alive() and not ply:IsSpec() then
+                        if ply:IsTraitorTeam() or ROLE_HAS_PASSIVE_WIN[ply:GetRole()] then
+                            ent:AddEntityRelationship(ply, D_LI, 99)
+                        else
+                            ent:AddEntityRelationship(ply, D_HT, 99)
+                        end
+                    end
+                end
+            end
+        end
+    end)
+
+    -- Adjust damage given and taken based on convars
+    hook.Add("EntityTakeDamage", "DreadThrall_Cannibal_EntityTakeDamage", function(ent, dmginfo)
+        local attacker = dmginfo:GetAttacker()
+        if IsCannibal(attacker) and IsPlayer(ent) then
+            dmginfo:SetDamage(GetConVar("ttt_dreadthrall_cannibal_damage"):GetFloat())
+        elseif IsPlayer(attacker) and IsCannibal(ent) then
+            dmginfo:SetDamage(dmginfo:GetDamage() * GetConVar("ttt_dreadthrall_cannibal_toughness"):GetFloat())
+        end
+    end)
 
     net.Receive("TTT_DreadThrall_BoneCharmUsed", function(len, ply)
         if not IsPlayer(ply) or not ply:IsActiveDreadThrall() then return end

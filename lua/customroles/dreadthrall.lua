@@ -76,6 +76,16 @@ table.insert(ROLE.convars, {
     type = ROLE_CONVAR_TYPE_NUM,
     decimal = 0
 })
+table.insert(ROLE.convars, {
+    cvar = "ttt_dreadthrall_cannibal_damage",
+    type = ROLE_CONVAR_TYPE_NUM,
+    decimal = 0
+})
+table.insert(ROLE.convars, {
+    cvar = "ttt_dreadthrall_cannibal_toughness",
+    type = ROLE_CONVAR_TYPE_NUM,
+    decimal = 2
+})
 
 RegisterRole(ROLE)
 
