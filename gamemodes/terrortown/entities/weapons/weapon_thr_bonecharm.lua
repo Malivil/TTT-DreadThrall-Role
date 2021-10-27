@@ -4,6 +4,7 @@ if SERVER then
     util.AddNetworkString("TTT_DreadThrall_BoneCharmUsed")
     util.AddNetworkString("TTT_DreadThrall_Blizzard_Start")
     util.AddNetworkString("TTT_DreadThrall_Blizzard_End")
+    util.AddNetworkString("TTT_DreadThrall_Cannibal_Alert")
 
     resource.AddSingleFile("vgui/ttt/thr_spiritwalk.png")
     resource.AddSingleFile("vgui/ttt/thr_spiritwalk_hover.png")
@@ -80,6 +81,9 @@ SWEP.AllowDrop              = false
 if CLIENT then
     SWEP.PowersPanel = nil
 end
+
+local alert_far = Sound("npc/fast_zombie/fz_alert_far1.wav")
+local scream = Sound("npc/fast_zombie/fz_scream1.wav")
 
 if SERVER then
     CreateConVar("ttt_dreadthrall_spiritwalk_cooldown", "30", FCVAR_NONE, "How many seconds between uses", 1, 180)
@@ -478,6 +482,11 @@ if CLIENT then
         hook.Remove("SetupWorldFog", "DreadThrall_SetupWorldFog")
         hook.Remove("SetupSkyboxFog", "DreadThrall_SetupSkyboxFog")
     end)
+
+    net.Receive("TTT_DreadThrall_Cannibal_Alert", function()
+        surface.PlaySound(alert_far)
+        surface.PlaySound(scream)
+    end)
 else
     local function DoSpiritWalk(ply, entIndex)
         ply:SetColor(Color(255, 255, 255, 0))
@@ -533,6 +542,7 @@ else
 
         if not IsPlayer(target) then return end
 
+        -- TODO: Redo this
         local tgt_pos = target:GetPos()
         local spawns = {}
         for _, e in ipairs(ents.GetAll()) do
@@ -568,6 +578,9 @@ else
             zombie:NavSetWanderGoal(100, 100)
             zombie:SetNWBool("DreadThrallCannibal", true)
         end
+
+        net.Start("TTT_DreadThrall_Cannibal_Alert")
+        net.Broadcast()
 
         ply:PrintMessage(HUD_PRINTTALK, "Summoned " .. count .. " cannibals near " .. target:Nick())
         ply:PrintMessage(HUD_PRINTCENTER, "Summoned " .. count .. " cannibals near " .. target:Nick())
