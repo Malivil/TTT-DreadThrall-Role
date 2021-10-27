@@ -378,6 +378,8 @@ if CLIENT then
         self.PowersPanel = vgui.Create("DPanel")
         self.PowersPanel:SetSize(width, height)
         self.PowersPanel:Center()
+        self.PowersPanel:MakePopup()
+        self.PowersPanel:SetKeyboardInputEnabled(false)
         self.PowersPanel.Paint = function(pnl, w, h)
             draw.RoundedBox(8, 0, 0, w, h, Color(0, 0, 10, 200))
         end
