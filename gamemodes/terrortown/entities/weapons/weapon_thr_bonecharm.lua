@@ -429,8 +429,22 @@ if CLIENT then
         end
     end
 
+    local function IsHidden(cli, ply, start)
+        -- Magic number to scale this distance to the fog distance even though they supposedly use the same unit
+        local scale = 12.4
+        local dist = cli:GetPos():Distance(ply:GetPos())
+        return dist / scale > start
+    end
+
     net.Receive("TTT_DreadThrall_Blizzard_Start", function()
         local start = net.ReadUInt(12)
+
+        -- Hide all of the info shown in the target ID on mouse over
+        hook.Add("TTTTargetIDPlayerBlockInfo", "DreadThrall_TTTTargetIDPlayerBlockInfo", function(ply, cli)
+            if IsHidden(cli, ply, start) then
+                return true
+            end
+        end)
 
         --Limits the player's view distance like in among us
         hook.Add("SetupWorldFog", "DreadThrall_SetupWorldFog", function()
@@ -456,6 +470,7 @@ if CLIENT then
     end)
 
     net.Receive("TTT_DreadThrall_Blizzard_End", function()
+        hook.Remove("TTTTargetIDPlayerBlockInfo", "DreadThrall_TTTTargetIDPlayerBlockInfo")
         hook.Remove("SetupWorldFog", "DreadThrall_SetupWorldFog")
         hook.Remove("SetupSkyboxFog", "DreadThrall_SetupSkyboxFog")
     end)
@@ -534,9 +549,6 @@ else
 
         ply:SetNWInt(cooldownId, CurTime() + GetConVar(convarId):GetInt())
         ply:SubtractCredits(1)
-
-        -- TODO: Replace this with actually doing something
-        print(ply:Nick() .. " used DT power: " .. power)
 
         if power == "spiritwalk" then
             DoSpiritWalk(ply, entIndex)
