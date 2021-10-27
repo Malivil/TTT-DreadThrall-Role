@@ -27,7 +27,7 @@ ROLE.translations = {
         ["dreadthrall_powers_blizzard"] = "Summon Blizzard",
         ["dreadthrall_powers_blizzard_tooltip"] = "Summon a blizzard-like fog to reduce visibility",
         ["dreadthrall_powers_cannibal"] = "Cannibal Attack",
-        ["dreadthrall_powers_cannibal_tooltip"] = "Summon cannibals to randomly attack one of your living enemies",
+        ["dreadthrall_powers_cannibal_tooltip"] = "Summon aggressive cannibals near a random living enemy",
         ["bonecharm_help_pri"] = "Use {primaryfire} or {secondaryfire} to damage your enemies",
         ["bonecharm_help_sec"] = "Press {reload} to select and use a special action"
     }

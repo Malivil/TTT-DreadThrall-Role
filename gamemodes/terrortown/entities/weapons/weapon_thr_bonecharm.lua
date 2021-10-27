@@ -542,7 +542,6 @@ else
 
         if not IsPlayer(target) then return end
 
-        -- TODO: Redo this
         local tgt_pos = target:GetPos()
         local spawns = {}
         for _, e in ipairs(ents.GetAll()) do
@@ -560,18 +559,38 @@ else
         local count = GetConVar("ttt_dreadthrall_cannibal_count"):GetInt()
         local nearest_spawns = {}
         for _, spawn in SortedPairsByMemberValue(spawns, "dist") do
-            if IsValid(spawn.ent) then
-                table.insert(nearest_spawns, spawn.ent)
+            -- Don't let them spawn too close
+            if IsValid(spawn.ent) and spawn.dist > 300 then
+                table.insert(nearest_spawns, spawn.ent:GetPos())
                 if #nearest_spawns == count then
                     break
                 end
             end
         end
 
+        -- If we didn't find any spawns, generate random accessible points around the target
+        if #nearest_spawns == 0 then
+            local target_pos = target:GetPos()
+            target_pos = FindRespawnLocation(target_pos) or target_pos
+            for i = 1, count do
+                -- Move this point around a bit randomly
+                local x_mod = math.random(300, 700)
+                if math.random(0, 1) == 1 then
+                    x_mod = x_mod * -1
+                end
+                local y_mod = math.random(300, 700)
+                if math.random(0, 1) == 1 then
+                    y_mod = y_mod * -1
+                end
+                local mod_pos = Vector(target_pos[1] + x_mod, target_pos[2] + y_mod, target_pos[3] + 10)
+                table.insert(nearest_spawns, FindRespawnLocation(mod_pos) or mod_pos)
+            end
+        end
+
         -- Spawn 1 zombie for each of the chosen spawn locations
-        for _, ent in ipairs(nearest_spawns) do
+        for _, pos in ipairs(nearest_spawns) do
             local zombie = ents.Create("npc_fastzombie")
-            zombie:SetPos(Vector(ent:GetPos()[1], ent:GetPos()[2], ent:GetPos()[3] + 10))
+            zombie:SetPos(Vector(pos[1], pos[2], pos[3] + 10))
             zombie:Spawn()
             zombie:PhysWake()
             zombie:SetSchedule(SCHED_ALERT_WALK)
