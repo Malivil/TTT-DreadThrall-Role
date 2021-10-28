@@ -251,6 +251,10 @@ function SWEP:OnRemove()
     end
 end
 
+local function IsCannibal(ent)
+    return IsValid(ent) and ent:IsNPC() and ent:GetNWBool("DreadThrallCannibal", false)
+end
+
 if CLIENT then
     surface.CreateFont("DreadThrallTitle", {
         font = "Trebuchet MS",
@@ -487,6 +491,20 @@ if CLIENT then
         surface.PlaySound(alert_far)
         surface.PlaySound(scream)
     end)
+
+    -- Highlight active cannibals
+    hook.Add("PreDrawHalos", "DreadThrall_Highlight_PreDrawHalos", function()
+        local cannibals = {}
+        for _, ent in ipairs(ents.FindByClass("npc_fastzombie")) do
+            if IsCannibal(ent) then
+                table.insert(cannibals, ent)
+            end
+        end
+
+        if #cannibals == 0 then return end
+
+        halo.Add(cannibals, ROLE_COLORS[ROLE_TRAITOR], 1, 1, 1, true, true)
+    end)
 else
     local function DoSpiritWalk(ply, entIndex)
         ply:SetColor(Color(255, 255, 255, 0))
@@ -603,10 +621,6 @@ else
 
         ply:PrintMessage(HUD_PRINTTALK, "Summoned " .. count .. " cannibals near " .. target:Nick())
         ply:PrintMessage(HUD_PRINTCENTER, "Summoned " .. count .. " cannibals near " .. target:Nick())
-    end
-
-    local function IsCannibal(ent)
-        return IsValid(ent) and ent:IsNPC() and ent:GetNWBool("DreadThrallCannibal", false)
     end
 
     local nextRelationshipUpdate = CurTime()
