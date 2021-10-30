@@ -506,6 +506,10 @@ if CLIENT then
         halo.Add(cannibals, ROLE_COLORS[ROLE_TRAITOR], 1, 1, 1, true, true)
     end)
 else
+    local function HasPassiveWin(role)
+        return ROLE_HAS_PASSIVE_WIN and ROLE_HAS_PASSIVE_WIN[role]
+    end
+
     local function DoSpiritWalk(ply, entIndex)
         ply:SetColor(Color(255, 255, 255, 0))
         ply:SetMaterial("sprites/heatwave")
@@ -552,7 +556,7 @@ else
         local target = nil
         for _, p in RandomPairs(player.GetAll()) do
             -- Ignore dead people, spectators, traitors, jesters, and people who win passively (like the Old Man)
-            if p:Alive() and not p:IsSpec() and not p:IsTraitorTeam() and not p:ShouldActLikeJester() and not ROLE_HAS_PASSIVE_WIN[p:GetRole()] then
+            if p:Alive() and not p:IsSpec() and not p:IsTraitorTeam() and not p:ShouldActLikeJester() and not HasPassiveWin(p:GetRole()) then
                 target = p
                 break
             end
@@ -633,7 +637,7 @@ else
             if IsCannibal(ent) then
                 for _, ply in ipairs(player.GetAll()) do
                     if ply:Alive() and not ply:IsSpec() then
-                        if ply:IsTraitorTeam() or ROLE_HAS_PASSIVE_WIN[ply:GetRole()] then
+                        if ply:IsTraitorTeam() or HasPassiveWin(ply:GetRole()) then
                             ent:AddEntityRelationship(ply, D_LI, 99)
                         else
                             ent:AddEntityRelationship(ply, D_HT, 99)
