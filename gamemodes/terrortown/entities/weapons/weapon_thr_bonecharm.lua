@@ -494,6 +494,12 @@ if CLIENT then
 
     -- Highlight active cannibals
     hook.Add("PreDrawHalos", "DreadThrall_Highlight_PreDrawHalos", function()
+        if not IsPlayer(client) then
+            client = LocalPlayer()
+        end
+        -- Ignore dead and non-traitor players
+        if not IsPlayer(client) or not client:Alive() or client:IsSpec() or not client:IsTraitorTeam() then return end
+
         local cannibals = {}
         for _, ent in ipairs(ents.FindByClass("npc_fastzombie")) do
             if IsCannibal(ent) then
