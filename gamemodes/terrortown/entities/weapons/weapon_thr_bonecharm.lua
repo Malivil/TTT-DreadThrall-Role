@@ -70,7 +70,7 @@ SWEP.Secondary.Delay        = animationLengths[ACT_VM_SECONDARYATTACK]
 SWEP.Tertiary               = {}
 SWEP.Tertiary.Delay         = animationLengths[ACT_VM_THROW]
 
-SWEP.Kind                   = WEAPON_NONE
+SWEP.Kind                   = WEAPON_ROLE
 SWEP.WeaponID               = AMMO_CROWBAR
 
 SWEP.IsSilent               = true
