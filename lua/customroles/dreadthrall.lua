@@ -9,7 +9,7 @@ ROLE.nameshort = "thr"
 ROLE.desc = [[You are {role}! {comrades}
 
 Use your bone charm abilities to aid your team
-in defeating your enemies. Each ability costs 1 credit.]]
+in defeating your enemies.]]
 
 ROLE.team = ROLE_TEAM_TRAITOR
 
