@@ -19,7 +19,8 @@ ROLE.startingcredits = 2
 ROLE.translations = {
     ["english"] = {
         ["dreadthrall_powers_title"] = "Choose an Ability",
-        ["dreadthrall_powers_subtitle"] = "All abilities cost\n1 credit per use",
+        ["dreadthrall_powers_subtitle"] = "   All abilities cost\n{credits} credit(s) per use",
+        ["dreadthrall_powers_subtitle_free"] = "All abilities are\n    free to use",
         ["dreadthrall_powers_credits"] = "{credits} credits available",
         ["dreadthrall_powers_close"] = "Close",
         ["dreadthrall_powers_spiritwalk"] = "Spirit Walk",
@@ -34,6 +35,11 @@ ROLE.translations = {
 }
 
 ROLE.convars = {}
+table.insert(ROLE.convars, {
+    cvar = "ttt_dreadthrall_ability_cost",
+    type = ROLE_CONVAR_TYPE_NUM,
+    decimal = 0
+})
 table.insert(ROLE.convars, {
     cvar = "ttt_dreadthrall_spiritwalk_cooldown",
     type = ROLE_CONVAR_TYPE_NUM,

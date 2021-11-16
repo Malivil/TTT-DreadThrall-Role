@@ -86,6 +86,7 @@ local alert_far = Sound("npc/fast_zombie/fz_alert_far1.wav")
 local scream = Sound("npc/fast_zombie/fz_scream1.wav")
 
 if SERVER then
+    CreateConVar("ttt_dreadthrall_ability_cost", "1", FCVAR_NONE, "How many credits each ability use costs", 0, 10)
     CreateConVar("ttt_dreadthrall_spiritwalk_cooldown", "30", FCVAR_NONE, "How many seconds between uses", 1, 180)
     CreateConVar("ttt_dreadthrall_spiritwalk_duration", "10", FCVAR_NONE, "How many seconds the effect lasts", 1, 180)
     CreateConVar("ttt_dreadthrall_spiritwalk_speedboost", "2", FCVAR_NONE, "How much of a speed boost to give", 1, 5)
@@ -98,15 +99,30 @@ if SERVER then
     CreateConVar("ttt_dreadthrall_cannibal_toughness", "1", FCVAR_NONE, "Cannibal health multiplier", 0.1, 5)
 end
 
-if CLIENT then
-    function SWEP:Initialize()
+function SWEP:Initialize()
+    if CLIENT then
         self:AddHUDHelp("bonecharm_help_pri", "bonecharm_help_sec", true)
 
         hook.Add("TTTEndRound", "DreadThrall_BoneCharm_TTTEndRound", self.ClosePowersPanel)
         hook.Add("TTTPrepareRound", "DreadThrall_BoneCharm_TTTPrepareRound", self.ClosePowersPanel)
-
-        return self.BaseClass.Initialize(self)
     end
+
+    if SERVER then
+        SetGlobalInt("ttt_dreadthrall_ability_cost", GetConVar("ttt_dreadthrall_ability_cost"):GetInt())
+
+        local timerId = "BoneCharmBlizzard_" .. self:EntIndex()
+        local function ClearBlizzard()
+            if not timer.Exists(timerId) then return end
+            timer.Remove(timerId)
+
+            net.Start("TTT_DreadThrall_Blizzard_End")
+            net.Broadcast()
+        end
+        hook.Add("TTTEndRound", "DreadThrall_BoneCharm_TTTEndRound", ClearBlizzard)
+        hook.Add("TTTPrepareRound", "DreadThrall_BoneCharm_TTTPrepareRound", ClearBlizzard)
+    end
+
+    return self.BaseClass.Initialize(self)
 end
 
 function SWEP:GoIdle(anim)
@@ -304,7 +320,8 @@ if CLIENT then
             local name = btn:GetName()
             local cooldownTime = client:GetNWInt("DreadThrallCooldown_" .. name, 0)
             local offCooldown = cooldownTime <= CurTime()
-            local hasCredits = client:GetCredits() > 0
+            local credits = GetGlobalInt("ttt_dreadthrall_ability_cost", 1)
+            local hasCredits = client:GetCredits() >= credits
             local disabled = not hasCredits or not offCooldown or not client:IsActiveDreadThrall()
 
             local image = "vgui/ttt/thr_" .. name
@@ -331,8 +348,10 @@ if CLIENT then
             creditsLabel:SetText(LANG.GetParamTranslation("dreadthrall_powers_credits", { credits = client:GetCredits() }))
             creditsLabel:SizeToContents()
             creditsLabel:CenterHorizontal()
+            creditsLabel:SetVisible(credits > 0)
 
             creditsIcon:MoveLeftOf(creditsLabel)
+            creditsIcon:SetVisible(credits > 0)
         end
     end
 
@@ -399,7 +418,12 @@ if CLIENT then
         title:CenterHorizontal()
 
         local subtitle = vgui.Create("DLabel", self.PowersPanel)
-        subtitle:SetText(LANG.GetTranslation("dreadthrall_powers_subtitle"))
+        local credits = GetGlobalInt("ttt_dreadthrall_ability_cost", 1)
+        if credits > 0 then
+            subtitle:SetText(LANG.GetParamTranslation("dreadthrall_powers_subtitle", { credits = credits }))
+        else
+            subtitle:SetText(LANG.GetTranslation("dreadthrall_powers_subtitle_free"))
+        end
         subtitle:SetFont("DreadThrallSubTitle")
         subtitle:SizeToContents()
         subtitle:MoveBelow(title)
@@ -686,13 +710,14 @@ else
             return
         end
 
-        if ply:GetCredits() < 1 then
-            ErrorNoHalt("Player attempted to use DreadThrall power (" .. power .. ") without credits: " .. ply:Nick() .. " (" .. ply:SteamID() .. ")\n")
+        local credits = GetGlobalInt("ttt_dreadthrall_ability_cost", 1)
+        if ply:GetCredits() < credits then
+            ErrorNoHalt("Player attempted to use DreadThrall power (" .. power .. ") without enough credits (" .. ply:GetCredits() .. "/" .. credits .. "): " .. ply:Nick() .. " (" .. ply:SteamID() .. ")\n")
             return
         end
 
         ply:SetNWInt(cooldownId, CurTime() + GetConVar(convarId):GetInt())
-        ply:SubtractCredits(1)
+        ply:SubtractCredits(credits)
 
         if power == "spiritwalk" then
             DoSpiritWalk(ply, entIndex)
