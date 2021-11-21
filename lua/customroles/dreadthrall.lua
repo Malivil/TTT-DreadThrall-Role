@@ -98,10 +98,27 @@ if SERVER then
 end
 
 if CLIENT then
+    local keyMappingStyles = "font-size: 12px; color: black; display: inline-block; padding: 0px 3px; height: 16px; border-width: 4px; border-style: solid; border-left-color: rgb(221, 221, 221); border-bottom-color: rgb(119, 119, 102); border-right-color: rgb(119, 119, 119); border-top-color: rgb(255, 255, 255); background-color: rgb(204, 204, 187);"
     hook.Add("TTTTutorialRoleText", "DreadThrall_TutorialRoleText", function(role, titleLabel, roleIcon)
         if role == ROLE_DREADTHRALL then
             local roleColor = ROLE_COLORS[ROLE_TRAITOR]
-            return "The " .. ROLE_STRINGS[ROLE_DREADTHRALL] .. " is a member of the <span style='color: rgb(" .. roleColor.r .. ", " .. roleColor.g .. ", " .. roleColor.b .. ")'>traitor team</span> who can use their bone charm weapon to aid their team in defeating their enemies."
+            local html = "The " .. ROLE_STRINGS[ROLE_DREADTHRALL] .. " is a member of the <span style='color: rgb(" .. roleColor.r .. ", " .. roleColor.g .. ", " .. roleColor.b .. ")'>traitor team</span> who can use their bone charm weapon to aid their team in defeating their enemies."
+
+            html = html .. "<span style='display: block; margin-top: 10px;'>To use a <span style='color: rgb(" .. roleColor.r .. ", " .. roleColor.g .. ", " .. roleColor.b .. ")'>special ability</span>, equip the bone charm and press the "
+
+            local key = Key("+reload", "R")
+            html = html .. "<span style='" .. keyMappingStyles .. "'>" .. key .. "</span> key.</span>"
+
+            return html
+        end
+    end)
+end
+
+if SERVER then
+    hook.Add("TTTPlayerRoleChanged", "DreadThrall_TTTPlayerRoleChanged", function(ply, oldRole, newRole)
+        if newRole == ROLE_DREADTHRALL and IsPlayer(ply) and ply:Alive() and not ply:IsSpec() and not ply:HasWeapon("weapon_thr_bonecharm") then
+            print("Giving " .. ply:Nick() .. " bone charm")
+            ply:Give("weapon_thr_bonecharm")
         end
     end)
 end
