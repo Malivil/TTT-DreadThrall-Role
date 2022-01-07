@@ -117,7 +117,6 @@ end
 if SERVER then
     hook.Add("TTTPlayerRoleChanged", "DreadThrall_TTTPlayerRoleChanged", function(ply, oldRole, newRole)
         if newRole == ROLE_DREADTHRALL and IsPlayer(ply) and ply:Alive() and not ply:IsSpec() and not ply:HasWeapon("weapon_thr_bonecharm") then
-            print("Giving " .. ply:Nick() .. " bone charm")
             ply:Give("weapon_thr_bonecharm")
         end
     end)
