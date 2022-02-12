@@ -584,14 +584,25 @@ else
 
     local function DoCannibals(ply, entIndex)
         local target = nil
+        local alt_target = nil
         for _, p in RandomPairs(player.GetAll()) do
-            -- Ignore dead people, spectators, traitors, jesters, and people who win passively (like the Old Man)
+            -- Ignore dead people, spectators, traitors, glitches, jesters, and people who win passively (like the Old Man)
             if p:Alive() and not p:IsSpec() and not p:IsTraitorTeam() and not p:ShouldActLikeJester() and not HasPassiveWin(p:GetRole()) then
-                target = p
-                break
+                if p:IsGlitch() then
+                    alt_target = p
+                else
+                    target = p
+                    break
+                end
             end
         end
 
+        -- Allow the glitch as a backup
+        if not IsPlayer(target) then
+            target = alt_target
+        end
+
+        -- This should not be possible, but just in case
         if not IsPlayer(target) then return end
 
         local tgt_pos = target:GetPos()
@@ -665,13 +676,23 @@ else
         -- Update the zombie relationship so they don't attack traitors
         for _, ent in ipairs(ents.FindByClass("npc_fastzombie")) do
             if IsCannibal(ent) then
+                local glitches = {}
+                local found_target = false
                 for _, ply in ipairs(player.GetAll()) do
                     if ply:Alive() and not ply:IsSpec() then
-                        if ply:IsTraitorTeam() or HasPassiveWin(ply:GetRole()) then
+                        if ply:IsTraitorTeam() or ply:IsGlitch() or HasPassiveWin(ply:GetRole()) then
+                            if ply:IsGlitch() then table.insert(glitches, ply) end
                             ent:AddEntityRelationship(ply, D_LI, 99)
                         else
+                            found_target = true
                             ent:AddEntityRelationship(ply, D_HT, 99)
                         end
+                    end
+                end
+
+                if not found_target then
+                    for _, ply in ipairs(glitches) do
+                        ent:AddEntityRelationship(ply, D_HT, 99)
                     end
                 end
             end
