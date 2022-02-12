@@ -653,7 +653,11 @@ else
         -- Spawn 1 zombie for each of the chosen spawn locations
         for _, pos in ipairs(nearest_spawns) do
             local zombie = ents.Create("npc_fastzombie")
-            zombie:SetPos(Vector(pos[1], pos[2], pos[3] + 10))
+
+            local spawn_pos = Vector(pos[1], pos[2], pos[3] + 10)
+            local dir = (spawn_pos - zombie:GetPos()):GetNormal()
+            zombie:SetPos(spawn_pos)
+            zombie:SetAngles(Angle(dir[1], dir[2], dir[3]))
             zombie:Spawn()
             zombie:PhysWake()
             zombie:SetSchedule(SCHED_ALERT_WALK)
