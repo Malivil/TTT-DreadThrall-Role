@@ -271,6 +271,10 @@ local function IsCannibal(ent)
     return IsValid(ent) and ent:IsNPC() and ent:GetNWBool("DreadThrallCannibal", false)
 end
 
+local function IsOurTeam(ply)
+    return ply:GetRoleTeam(true) == player.GetRoleTeam(ROLE_DREADTHRALL, true)
+end
+
 if CLIENT then
     surface.CreateFont("DreadThrallTitle", {
         font = "Trebuchet MS",
@@ -521,8 +525,8 @@ if CLIENT then
         if not IsPlayer(client) then
             client = LocalPlayer()
         end
-        -- Ignore dead and non-traitor players
-        if not IsPlayer(client) or not client:Alive() or client:IsSpec() or not client:IsTraitorTeam() then return end
+        -- Ignore the dead and players who aren't on our team
+        if not IsPlayer(client) or not client:Alive() or client:IsSpec() or not IsOurTeam(client) then return end
 
         local cannibals = {}
         for _, ent in ipairs(ents.FindByClass("npc_fastzombie")) do
@@ -586,9 +590,9 @@ else
         local target = nil
         local alt_target = nil
         for _, p in RandomPairs(player.GetAll()) do
-            -- Ignore dead people, spectators, traitors, glitches, jesters, and people who win passively (like the Old Man)
-            if p:Alive() and not p:IsSpec() and not p:IsTraitorTeam() and not p:ShouldActLikeJester() and not HasPassiveWin(p:GetRole()) then
-                if p:IsGlitch() then
+            -- Ignore dead people, spectators, team members, glitches (if the Dread Thrall is a traitor), jesters, and people who win passively (like the Old Man)
+            if p:Alive() and not p:IsSpec() and not IsOurTeam(p) and not p:ShouldActLikeJester() and not HasPassiveWin(p:GetRole()) then
+                if TRAITOR_ROLES[ROLE_DREADTHRALL] and p:IsGlitch() then
                     alt_target = p
                 else
                     target = p
@@ -677,14 +681,14 @@ else
         if CurTime() < nextRelationshipUpdate then return end
         nextRelationshipUpdate = CurTime() + 0.08
 
-        -- Update the zombie relationship so they don't attack traitors
+        -- Update the zombie relationship so they don't attack team members
         for _, ent in ipairs(ents.FindByClass("npc_fastzombie")) do
             if IsCannibal(ent) then
                 local glitches = {}
                 local found_target = false
                 for _, ply in ipairs(player.GetAll()) do
                     if ply:Alive() and not ply:IsSpec() then
-                        if ply:IsTraitorTeam() or ply:IsGlitch() or HasPassiveWin(ply:GetRole()) then
+                        if IsOurTeam(ply) or (TRAITOR_ROLES[ROLE_DREADTHRALL] and ply:IsGlitch()) or HasPassiveWin(ply:GetRole()) then
                             if ply:IsGlitch() then table.insert(glitches, ply) end
                             ent:AddEntityRelationship(ply, D_LI, 99)
                         else

@@ -90,21 +90,39 @@ table.insert(ROLE.convars, {
     type = ROLE_CONVAR_TYPE_NUM,
     decimal = 2
 })
+table.insert(ROLE.convars, {
+    cvar = "ttt_dreadthrall_is_monster",
+    type = ROLE_CONVAR_TYPE_BOOL
+})
 
 RegisterRole(ROLE)
 
 if SERVER then
     AddCSLuaFile()
+
+    local dreadthrall_is_monster = CreateConVar("ttt_dreadthrall_is_monster", "0")
+    hook.Add("TTTSyncGlobals", "DreadThrall_TTTSyncGlobals", function()
+        SetGlobalBool("ttt_dreadthrall_is_monster", dreadthrall_is_monster:GetBool())
+    end)
+
+    hook.Add("TTTPlayerRoleChanged", "DreadThrall_TTTPlayerRoleChanged", function(ply, oldRole, newRole)
+        if newRole == ROLE_DREADTHRALL and IsPlayer(ply) and ply:Alive() and not ply:IsSpec() and not ply:HasWeapon("weapon_thr_bonecharm") then
+            ply:Give("weapon_thr_bonecharm")
+        end
+    end)
 end
 
 if CLIENT then
     local keyMappingStyles = "font-size: 12px; color: black; display: inline-block; padding: 0px 3px; height: 16px; border-width: 4px; border-style: solid; border-left-color: rgb(221, 221, 221); border-bottom-color: rgb(119, 119, 102); border-right-color: rgb(119, 119, 119); border-top-color: rgb(255, 255, 255); background-color: rgb(204, 204, 187);"
     hook.Add("TTTTutorialRoleText", "DreadThrall_TutorialRoleText", function(role, titleLabel, roleIcon)
         if role == ROLE_DREADTHRALL then
-            local roleColor = ROLE_COLORS[ROLE_TRAITOR]
-            local html = "The " .. ROLE_STRINGS[ROLE_DREADTHRALL] .. " is a member of the <span style='color: rgb(" .. roleColor.r .. ", " .. roleColor.g .. ", " .. roleColor.b .. ")'>traitor team</span> who can use their bone charm weapon to aid their team in defeating their enemies."
+            -- Use this for highlighting things like "kill"
+            local traitorColor = ROLE_COLORS[ROLE_TRAITOR]
+            local roleTeam = player.GetRoleTeam(ROLE_DREADTHRALL, true)
+            local roleTeamString, roleColor = GetRoleTeamInfo(roleTeam, true)
+            local html = "The " .. ROLE_STRINGS[ROLE_DREADTHRALL] .. " is a member of the <span style='color: rgb(" .. roleColor.r .. ", " .. roleColor.g .. ", " .. roleColor.b .. ")'>" .. string.lower(roleTeamString) .. " team</span> who can use their bone charm weapon to aid their team in defeating their enemies."
 
-            html = html .. "<span style='display: block; margin-top: 10px;'>To use a <span style='color: rgb(" .. roleColor.r .. ", " .. roleColor.g .. ", " .. roleColor.b .. ")'>special ability</span>, equip the bone charm and press the "
+            html = html .. "<span style='display: block; margin-top: 10px;'>To use a <span style='color: rgb(" .. traitorColor.r .. ", " .. traitorColor.g .. ", " .. traitorColor.b .. ")'>special ability</span>, equip the bone charm and press the "
 
             local key = Key("+reload", "R")
             html = html .. "<span style='" .. keyMappingStyles .. "'>" .. key .. "</span> key.</span>"
@@ -114,10 +132,8 @@ if CLIENT then
     end)
 end
 
-if SERVER then
-    hook.Add("TTTPlayerRoleChanged", "DreadThrall_TTTPlayerRoleChanged", function(ply, oldRole, newRole)
-        if newRole == ROLE_DREADTHRALL and IsPlayer(ply) and ply:Alive() and not ply:IsSpec() and not ply:HasWeapon("weapon_thr_bonecharm") then
-            ply:Give("weapon_thr_bonecharm")
-        end
-    end)
-end
+hook.Add("TTTUpdateRoleState", "DreadThrall_Team_TTTUpdateRoleState", function()
+    local dreadthrall_is_monster = GetGlobalBool("ttt_dreadthrall_is_monster", false)
+    MONSTER_ROLES[ROLE_DREADTHRALL] = dreadthrall_is_monster
+    TRAITOR_ROLES[ROLE_DREADTHRALL] = not dreadthrall_is_monster
+end)
