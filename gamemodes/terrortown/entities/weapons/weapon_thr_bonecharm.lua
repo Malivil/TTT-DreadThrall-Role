@@ -665,6 +665,7 @@ else
             zombie:Spawn()
             zombie:PhysWake()
             zombie:SetSchedule(SCHED_ALERT_WALK)
+            zombie:SetNPCState(NPC_STATE_ALERT)
             zombie:NavSetWanderGoal(100, 100)
             zombie:SetNWBool("DreadThrallCannibal", true)
         end
