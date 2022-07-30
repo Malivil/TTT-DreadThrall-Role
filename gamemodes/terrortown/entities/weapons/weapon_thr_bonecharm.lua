@@ -322,6 +322,11 @@ if CLIENT then
             self.PowersPanel:MoveToFront()
 
             local name = btn:GetName()
+
+            -- Make sure this power exists (and that the panel hasn't been closed)
+            local cooldown = cooldownsPerPower[name]
+            if not cooldown then return end
+
             local cooldownTime = client:GetNWInt("DreadThrallCooldown_" .. name, 0)
             local offCooldown = cooldownTime <= CurTime()
             local credits = GetGlobalInt("ttt_dreadthrall_ability_cost", 1)
@@ -338,7 +343,6 @@ if CLIENT then
             btn:SetEnabled(not disabled)
 
             -- Update cooldown status
-            local cooldown = cooldownsPerPower[name]
             if offCooldown then
                 cooldown:SetVisible(false)
             else
