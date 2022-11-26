@@ -750,6 +750,8 @@ else
             return
         end
 
+        hook.Call("TTTDreadThrallPowerUsed", nil, ply, power)
+
         ply:SetNWInt(cooldownId, CurTime() + GetConVar(convarId):GetInt())
         ply:SubtractCredits(credits)
 
