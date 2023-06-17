@@ -252,12 +252,12 @@ end
 
 function SWEP:OnRemove()
     timer.Remove("BoneCharmIdle_" .. self:EntIndex())
-    if SERVER then
-        if timer.Exists("BoneCharmSpiritWalk_" .. self:EntIndex()) then
-            timer.Remove("BoneCharmSpiritWalk_" .. self:EntIndex())
-            local owner = self:GetOwner()
-            owner:SetColor(Color(255, 255, 255, 255))
-            owner:SetMaterial("models/glass")
+    if SERVER and timer.Exists("BoneCharmSpiritWalk_" .. self:EntIndex()) then
+        timer.Remove("BoneCharmSpiritWalk_" .. self:EntIndex())
+        local owner = self:GetOwner()
+        if IsPlayer(owner) then
+            owner:SetColor(COLOR_WHITE)
+            owner:SetMaterial("")
             owner:EmitSound("weapons/ttt/dreadthrall/unfade.wav")
             owner:SetNWInt("DreadThrall_SpiritWalking", 0)
         end
@@ -560,10 +560,12 @@ else
         timer.Create("BoneCharmSpiritWalk_" .. entIndex, duration, 1, function()
             -- Remove the timer so the player can switch weapons again
             timer.Remove("BoneCharmSpiritWalk_" .. entIndex)
-            ply:SetColor(Color(255, 255, 255, 255))
-            ply:SetMaterial("models/glass")
-            ply:EmitSound("weapons/ttt/dreadthrall/unfade.wav")
-            ply:SetNWInt("DreadThrall_SpiritWalking", 0)
+            if IsPlayer(ply) then
+                ply:SetColor(COLOR_WHITE)
+                ply:SetMaterial("")
+                ply:EmitSound("weapons/ttt/dreadthrall/unfade.wav")
+                ply:SetNWInt("DreadThrall_SpiritWalking", 0)
+            end
         end)
     end
 
