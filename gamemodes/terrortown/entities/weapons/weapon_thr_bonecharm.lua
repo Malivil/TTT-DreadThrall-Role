@@ -85,8 +85,9 @@ end
 local alert_far = Sound("npc/fast_zombie/fz_alert_far1.wav")
 local scream = Sound("npc/fast_zombie/fz_scream1.wav")
 
+local dreadthrall_ability_cost = CreateConVar("ttt_dreadthrall_ability_cost", "1", FCVAR_REPLICATED, "How many credits each ability use costs", 0, 10)
+
 if SERVER then
-    CreateConVar("ttt_dreadthrall_ability_cost", "1", FCVAR_NONE, "How many credits each ability use costs", 0, 10)
     CreateConVar("ttt_dreadthrall_spiritwalk_cooldown", "30", FCVAR_NONE, "How many seconds between uses", 1, 180)
     CreateConVar("ttt_dreadthrall_spiritwalk_duration", "10", FCVAR_NONE, "How many seconds the effect lasts", 1, 180)
     CreateConVar("ttt_dreadthrall_spiritwalk_speedboost", "2", FCVAR_NONE, "How much of a speed boost to give", 1, 5)
@@ -108,8 +109,6 @@ function SWEP:Initialize()
     end
 
     if SERVER then
-        SetGlobalInt("ttt_dreadthrall_ability_cost", GetConVar("ttt_dreadthrall_ability_cost"):GetInt())
-
         local timerId = "BoneCharmBlizzard_" .. self:EntIndex()
         local function ClearBlizzard()
             if not timer.Exists(timerId) then return end
@@ -329,7 +328,7 @@ if CLIENT then
 
             local cooldownTime = client:GetNWInt("DreadThrallCooldown_" .. name, 0)
             local offCooldown = cooldownTime <= CurTime()
-            local credits = GetGlobalInt("ttt_dreadthrall_ability_cost", 1)
+            local credits = dreadthrall_ability_cost:GetInt()
             local hasCredits = client:GetCredits() >= credits
             local disabled = not hasCredits or not offCooldown or not client:IsActiveDreadThrall()
 
@@ -426,7 +425,7 @@ if CLIENT then
         title:CenterHorizontal()
 
         local subtitle = vgui.Create("DLabel", self.PowersPanel)
-        local credits = GetGlobalInt("ttt_dreadthrall_ability_cost", 1)
+        local credits = dreadthrall_ability_cost:GetInt()
         if credits > 0 then
             subtitle:SetText(LANG.GetParamTranslation("dreadthrall_powers_subtitle", { credits = credits }))
         else
@@ -746,7 +745,7 @@ else
             return
         end
 
-        local credits = GetGlobalInt("ttt_dreadthrall_ability_cost", 1)
+        local credits = dreadthrall_ability_cost:GetInt()
         if ply:GetCredits() < credits then
             ErrorNoHalt("Player attempted to use DreadThrall power (" .. power .. ") without enough credits (" .. ply:GetCredits() .. "/" .. credits .. "): " .. ply:Nick() .. " (" .. ply:SteamID() .. ")\n")
             return

@@ -97,13 +97,10 @@ table.insert(ROLE.convars, {
 
 RegisterRole(ROLE)
 
+local dreadthrall_is_monster = CreateConVar("ttt_dreadthrall_is_monster", "0", FCVAR_REPLICATED)
+
 if SERVER then
     AddCSLuaFile()
-
-    local dreadthrall_is_monster = CreateConVar("ttt_dreadthrall_is_monster", "0")
-    hook.Add("TTTSyncGlobals", "DreadThrall_TTTSyncGlobals", function()
-        SetGlobalBool("ttt_dreadthrall_is_monster", dreadthrall_is_monster:GetBool())
-    end)
 
     hook.Add("TTTPlayerRoleChanged", "DreadThrall_TTTPlayerRoleChanged", function(ply, oldRole, newRole)
         if newRole == ROLE_DREADTHRALL and IsPlayer(ply) and ply:Alive() and not ply:IsSpec() and not ply:HasWeapon("weapon_thr_bonecharm") then
@@ -133,7 +130,7 @@ if CLIENT then
 end
 
 hook.Add("TTTUpdateRoleState", "DreadThrall_Team_TTTUpdateRoleState", function()
-    local dreadthrall_is_monster = GetGlobalBool("ttt_dreadthrall_is_monster", false)
-    MONSTER_ROLES[ROLE_DREADTHRALL] = dreadthrall_is_monster
-    TRAITOR_ROLES[ROLE_DREADTHRALL] = not dreadthrall_is_monster
+    local is_monster = dreadthrall_is_monster:GetBool()
+    MONSTER_ROLES[ROLE_DREADTHRALL] = is_monster
+    TRAITOR_ROLES[ROLE_DREADTHRALL] = not is_monster
 end)
