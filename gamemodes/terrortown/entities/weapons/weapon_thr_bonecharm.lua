@@ -575,8 +575,7 @@ else
         net.Broadcast()
 
         for _, p in ipairs(player.GetAll()) do
-            p:PrintMessage(HUD_PRINTTALK, "A blizzard approaches...")
-            p:PrintMessage(HUD_PRINTCENTER, "A blizzard approaches...")
+            p:QueueMessage(MSG_PRINTBOTH, "A blizzard approaches...")
         end
 
         local duration = GetConVar("ttt_dreadthrall_blizzard_duration"):GetInt()
@@ -585,8 +584,7 @@ else
             net.Broadcast()
 
             for _, p in ipairs(player.GetAll()) do
-                p:PrintMessage(HUD_PRINTTALK, "The blizzard has subsided")
-                p:PrintMessage(HUD_PRINTCENTER, "The blizzard has subsided")
+                p:QueueMessage(MSG_PRINTBOTH, "The blizzard has subsided")
             end
         end)
     end
@@ -678,8 +676,7 @@ else
         net.Start("TTT_DreadThrall_Cannibal_Alert")
         net.Broadcast()
 
-        ply:PrintMessage(HUD_PRINTTALK, "Summoned " .. count .. " cannibals near " .. target:Nick())
-        ply:PrintMessage(HUD_PRINTCENTER, "Summoned " .. count .. " cannibals near " .. target:Nick())
+        ply:QueueMessage(MSG_PRINTBOTH, "Summoned " .. count .. " cannibals near " .. target:Nick())
     end
 
     local nextRelationshipUpdate = CurTime()
