@@ -1,5 +1,10 @@
 AddCSLuaFile()
 
+local player = player
+
+local GetAllPlayers = player.GetAll
+local PlayerIterator = player.Iterator
+
 if SERVER then
     util.AddNetworkString("TTT_DreadThrall_BoneCharmUsed")
     util.AddNetworkString("TTT_DreadThrall_Blizzard_Start")
@@ -574,7 +579,7 @@ else
         net.WriteUInt(start, 12)
         net.Broadcast()
 
-        for _, p in ipairs(player.GetAll()) do
+        for _, p in PlayerIterator() do
             p:QueueMessage(MSG_PRINTBOTH, "A blizzard approaches...")
         end
 
@@ -583,7 +588,7 @@ else
             net.Start("TTT_DreadThrall_Blizzard_End")
             net.Broadcast()
 
-            for _, p in ipairs(player.GetAll()) do
+            for _, p in PlayerIterator() do
                 p:QueueMessage(MSG_PRINTBOTH, "The blizzard has subsided")
             end
         end)
@@ -592,7 +597,7 @@ else
     local function DoCannibals(ply, entIndex)
         local target = nil
         local alt_target = nil
-        for _, p in RandomPairs(player.GetAll()) do
+        for _, p in RandomPairs(GetAllPlayers()) do
             -- Ignore dead people, spectators, team members, glitches (if the Dread Thrall is a traitor), jesters, and people who win passively (like the Old Man)
             if p:Alive() and not p:IsSpec() and not IsOurTeam(p) and not p:ShouldActLikeJester() and not HasPassiveWin(p:GetRole()) then
                 if TRAITOR_ROLES[ROLE_DREADTHRALL] and p:IsGlitch() then
@@ -689,7 +694,7 @@ else
             if IsCannibal(ent) then
                 local glitches = {}
                 local found_target = false
-                for _, ply in ipairs(player.GetAll()) do
+                for _, ply in PlayerIterator() do
                     if ply:Alive() and not ply:IsSpec() then
                         if IsOurTeam(ply) or (TRAITOR_ROLES[ROLE_DREADTHRALL] and ply:IsGlitch()) or HasPassiveWin(ply:GetRole()) then
                             if ply:IsGlitch() then table.insert(glitches, ply) end
@@ -763,7 +768,7 @@ else
     end)
 
     hook.Add("TTTPrepareRound", "DreadThrall_BoneCharm_TTTPrepareRound", function()
-        for _, v in pairs(player.GetAll()) do
+        for _, v in PlayerIterator() do
             v:SetNWInt("DreadThrallCooldown_spiritwalk", 0)
             v:SetNWInt("DreadThrallCooldown_blizzard", 0)
             v:SetNWInt("DreadThrallCooldown_cannibal", 0)
