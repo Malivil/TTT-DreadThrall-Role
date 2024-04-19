@@ -10,6 +10,7 @@ ROLE.desc = [[You are {role}! {comrades}
 
 Use your bone charm abilities to aid your team
 in defeating your enemies.]]
+ROLE.shortdesc = "Uses special abilities via their Bone Charm to distract and defeat their enemies."
 
 ROLE.team = ROLE_TEAM_TRAITOR
 
