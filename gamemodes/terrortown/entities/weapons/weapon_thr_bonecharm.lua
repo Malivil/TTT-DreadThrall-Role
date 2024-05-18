@@ -10,20 +10,6 @@ if SERVER then
     util.AddNetworkString("TTT_DreadThrall_Blizzard_Start")
     util.AddNetworkString("TTT_DreadThrall_Blizzard_End")
     util.AddNetworkString("TTT_DreadThrall_Cannibal_Alert")
-
-    resource.AddSingleFile("vgui/ttt/thr_spiritwalk.png")
-    resource.AddSingleFile("vgui/ttt/thr_spiritwalk_hover.png")
-    resource.AddSingleFile("vgui/ttt/thr_spiritwalk_disabled.png")
-    resource.AddSingleFile("vgui/ttt/thr_blizzard.png")
-    resource.AddSingleFile("vgui/ttt/thr_blizzard_hover.png")
-    resource.AddSingleFile("vgui/ttt/thr_blizzard_disabled.png")
-    resource.AddSingleFile("vgui/ttt/thr_cannibal.png")
-    resource.AddSingleFile("vgui/ttt/thr_cannibal_hover.png")
-    resource.AddSingleFile("vgui/ttt/thr_cannibal_disabled.png")
-    resource.AddSingleFile("vgui/ttt/thr_credits.png")
-
-    resource.AddSingleFile("sound/weapons/ttt/dreadthrall/fade.wav")
-    resource.AddSingleFile("sound/weapons/ttt/dreadthrall/unfade.wav")
 end
 
 SWEP.HoldType = "knife"
