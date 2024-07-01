@@ -108,8 +108,8 @@ function SWEP:Initialize()
             net.Start("TTT_DreadThrall_Blizzard_End")
             net.Broadcast()
         end
-        hook.Add("TTTEndRound", "DreadThrall_BoneCharm_TTTEndRound", ClearBlizzard)
-        hook.Add("TTTPrepareRound", "DreadThrall_BoneCharm_TTTPrepareRound", ClearBlizzard)
+        hook.Add("TTTEndRound", "DreadThrall_BoneCharm_Blizzard_TTTEndRound", ClearBlizzard)
+        hook.Add("TTTPrepareRound", "DreadThrall_BoneCharm_Blizzard_TTTPrepareRound", ClearBlizzard)
     end
 
     return self.BaseClass.Initialize(self)
@@ -137,7 +137,7 @@ end
 
 function SWEP:Holster()
     -- Don't let the user holster their weapon while they are spirit walking
-    if IsValid(self) and timer.Exists("BoneCharmSpiritWalk_" .. self:EntIndex()) then
+    if SERVER and IsValid(self) and timer.Exists("BoneCharmSpiritWalk_" .. self:EntIndex()) then
         return false
     end
     return true
@@ -242,16 +242,6 @@ end
 
 function SWEP:OnRemove()
     timer.Remove("BoneCharmIdle_" .. self:EntIndex())
-    if SERVER and timer.Exists("BoneCharmSpiritWalk_" .. self:EntIndex()) then
-        timer.Remove("BoneCharmSpiritWalk_" .. self:EntIndex())
-        local owner = self:GetOwner()
-        if IsPlayer(owner) then
-            owner:SetColor(COLOR_WHITE)
-            owner:SetMaterial("")
-            owner:EmitSound("weapons/ttt/dreadthrall/unfade.wav")
-            owner:SetNWInt("DreadThrall_SpiritWalking", 0)
-        end
-    end
     if CLIENT then
         self:ClosePowersPanel()
     end
@@ -534,6 +524,20 @@ if CLIENT then
         halo.Add(cannibals, ROLE_COLORS[ROLE_TRAITOR], 1, 1, 1, true, true)
     end)
 else
+    function SWEP:PreDrop()
+        if timer.Exists("BoneCharmSpiritWalk_" .. self:EntIndex()) then
+            timer.Remove("BoneCharmSpiritWalk_" .. self:EntIndex())
+            local owner = self:GetOwner()
+            if IsPlayer(owner) then
+                owner:SetColor(COLOR_WHITE)
+                owner:SetMaterial("")
+                owner:EmitSound("weapons/ttt/dreadthrall/unfade.wav")
+                owner:SetNWInt("DreadThrall_SpiritWalking", 0)
+            end
+        end
+        return self.BaseClass.PreDrop(self)
+    end
+
     local function HasPassiveWin(role)
         return ROLE_HAS_PASSIVE_WIN and ROLE_HAS_PASSIVE_WIN[role]
     end
