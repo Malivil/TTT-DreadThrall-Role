@@ -538,10 +538,6 @@ else
         return self.BaseClass.PreDrop(self)
     end
 
-    local function HasPassiveWin(role)
-        return ROLE_HAS_PASSIVE_WIN and ROLE_HAS_PASSIVE_WIN[role]
-    end
-
     local function DoSpiritWalk(ply, entIndex)
         ply:SetColor(Color(255, 255, 255, 0))
         ply:SetMaterial("sprites/heatwave")
@@ -589,7 +585,7 @@ else
         local alt_target = nil
         for _, p in RandomPairs(GetAllPlayers()) do
             -- Ignore dead people, spectators, team members, glitches (if the Dread Thrall is a traitor), jesters, and people who win passively (like the Old Man)
-            if p:Alive() and not p:IsSpec() and not IsOurTeam(p) and not p:ShouldActLikeJester() and not HasPassiveWin(p:GetRole()) then
+            if p:Alive() and not p:IsSpec() and not IsOurTeam(p) and not p:ShouldActLikeJester() and not ROLE_HAS_PASSIVE_WIN[p:GetRole()] then
                 if TRAITOR_ROLES[ROLE_DREADTHRALL] and p:IsGlitch() then
                     alt_target = p
                 else
@@ -686,7 +682,7 @@ else
                 local found_target = false
                 for _, ply in PlayerIterator() do
                     if ply:Alive() and not ply:IsSpec() then
-                        if IsOurTeam(ply) or (TRAITOR_ROLES[ROLE_DREADTHRALL] and ply:IsGlitch()) or HasPassiveWin(ply:GetRole()) then
+                        if IsOurTeam(ply) or (TRAITOR_ROLES[ROLE_DREADTHRALL] and ply:IsGlitch()) or ROLE_HAS_PASSIVE_WIN[ply:GetRole()] then
                             if ply:IsGlitch() then table.insert(glitches, ply) end
                             ent:AddEntityRelationship(ply, D_LI, 99)
                         else
@@ -747,6 +743,8 @@ else
 
         ply:SetNWInt(cooldownId, CurTime() + GetConVar(convarId):GetInt())
         ply:SubtractCredits(credits)
+
+        if ply.IsRoleAbilityDisabled and ply:IsRoleAbilityDisabled() then return end
 
         if power == "spiritwalk" then
             DoSpiritWalk(ply, entIndex)

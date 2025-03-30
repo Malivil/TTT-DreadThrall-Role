@@ -35,66 +35,67 @@ ROLE.translations = {
     }
 }
 
-ROLE.convars = {}
-table.insert(ROLE.convars, {
-    cvar = "ttt_dreadthrall_ability_cost",
-    type = ROLE_CONVAR_TYPE_NUM,
-    decimal = 0
-})
-table.insert(ROLE.convars, {
-    cvar = "ttt_dreadthrall_spiritwalk_cooldown",
-    type = ROLE_CONVAR_TYPE_NUM,
-    decimal = 0
-})
-table.insert(ROLE.convars, {
-    cvar = "ttt_dreadthrall_spiritwalk_duration",
-    type = ROLE_CONVAR_TYPE_NUM,
-    decimal = 0
-})
-table.insert(ROLE.convars, {
-    cvar = "ttt_dreadthrall_spiritwalk_speedboost",
-    type = ROLE_CONVAR_TYPE_NUM,
-    decimal = 2
-})
-table.insert(ROLE.convars, {
-    cvar = "ttt_dreadthrall_blizzard_cooldown",
-    type = ROLE_CONVAR_TYPE_NUM,
-    decimal = 0
-})
-table.insert(ROLE.convars, {
-    cvar = "ttt_dreadthrall_blizzard_duration",
-    type = ROLE_CONVAR_TYPE_NUM,
-    decimal = 0
-})
-table.insert(ROLE.convars, {
-    cvar = "ttt_dreadthrall_blizzard_start",
-    type = ROLE_CONVAR_TYPE_NUM,
-    decimal = 0
-})
-table.insert(ROLE.convars, {
-    cvar = "ttt_dreadthrall_cannibal_cooldown",
-    type = ROLE_CONVAR_TYPE_NUM,
-    decimal = 0
-})
-table.insert(ROLE.convars, {
-    cvar = "ttt_dreadthrall_cannibal_count",
-    type = ROLE_CONVAR_TYPE_NUM,
-    decimal = 0
-})
-table.insert(ROLE.convars, {
-    cvar = "ttt_dreadthrall_cannibal_damage",
-    type = ROLE_CONVAR_TYPE_NUM,
-    decimal = 0
-})
-table.insert(ROLE.convars, {
-    cvar = "ttt_dreadthrall_cannibal_toughness",
-    type = ROLE_CONVAR_TYPE_NUM,
-    decimal = 2
-})
-table.insert(ROLE.convars, {
-    cvar = "ttt_dreadthrall_is_monster",
-    type = ROLE_CONVAR_TYPE_BOOL
-})
+ROLE.convars = {
+    {
+        cvar = "ttt_dreadthrall_ability_cost",
+        type = ROLE_CONVAR_TYPE_NUM,
+        decimal = 0
+    },
+    {
+        cvar = "ttt_dreadthrall_spiritwalk_cooldown",
+        type = ROLE_CONVAR_TYPE_NUM,
+        decimal = 0
+    },
+    {
+        cvar = "ttt_dreadthrall_spiritwalk_duration",
+        type = ROLE_CONVAR_TYPE_NUM,
+        decimal = 0
+    },
+    {
+        cvar = "ttt_dreadthrall_spiritwalk_speedboost",
+        type = ROLE_CONVAR_TYPE_NUM,
+        decimal = 2
+    },
+    {
+        cvar = "ttt_dreadthrall_blizzard_cooldown",
+        type = ROLE_CONVAR_TYPE_NUM,
+        decimal = 0
+    },
+    {
+        cvar = "ttt_dreadthrall_blizzard_duration",
+        type = ROLE_CONVAR_TYPE_NUM,
+        decimal = 0
+    },
+    {
+        cvar = "ttt_dreadthrall_blizzard_start",
+        type = ROLE_CONVAR_TYPE_NUM,
+        decimal = 0
+    },
+    {
+        cvar = "ttt_dreadthrall_cannibal_cooldown",
+        type = ROLE_CONVAR_TYPE_NUM,
+        decimal = 0
+    },
+    {
+        cvar = "ttt_dreadthrall_cannibal_count",
+        type = ROLE_CONVAR_TYPE_NUM,
+        decimal = 0
+    },
+    {
+        cvar = "ttt_dreadthrall_cannibal_damage",
+        type = ROLE_CONVAR_TYPE_NUM,
+        decimal = 0
+    },
+    {
+        cvar = "ttt_dreadthrall_cannibal_toughness",
+        type = ROLE_CONVAR_TYPE_NUM,
+        decimal = 2
+    },
+    {
+        cvar = "ttt_dreadthrall_is_monster",
+        type = ROLE_CONVAR_TYPE_BOOL
+    }
+}
 
 RegisterRole(ROLE)
 
