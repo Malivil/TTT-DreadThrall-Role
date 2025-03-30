@@ -7,11 +7,17 @@
     "*.md",
     "*.iml",
     ".idea*",
+    ".luacheckrc",
     "*.psd",
-    "*.vcproj",
+    "*.rockspec",
     "*.svn*",
+    "*.vcproj",
     "LICENSE",
-	"templates*",
-    "images*"
+    "scripts*",
+    "templates*",
+    "images*",
+    "docs*",
+    "*.sw.vtx",
+    "*.xbox.vtx"
   ]
 }
