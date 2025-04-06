@@ -744,7 +744,7 @@ else
         ply:SetNWInt(cooldownId, CurTime() + GetConVar(convarId):GetInt())
         ply:SubtractCredits(credits)
 
-        if ply.IsRoleAbilityDisabled and ply:IsRoleAbilityDisabled() then return end
+        if ply:IsRoleAbilityDisabled() then return end
 
         if power == "spiritwalk" then
             DoSpiritWalk(ply, entIndex)
